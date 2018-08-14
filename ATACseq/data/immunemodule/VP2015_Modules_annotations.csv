@@ -1,0 +1,261 @@
+Module ID,Annotation,X,Y
+M1_1,Coagulation / Platelets 1,1,1
+M1_2,IFN Response 1,1,2
+M2_1,Unnamed 1,2,1
+M2_2,Unnamed 2,2,2
+M2_3,Erythropoeisis 2,2,3
+M3_1,Erythropoeisis 3,3,1
+M3_2,Myeloid Lineage 1,3,2
+M3_3,Cell Cycle 1,3,3
+M3_4,IFN Response 2,3,4
+M3_5,Protein Synthesis 1,3,5
+M3_6,Cytotoxicity / NK Cells 1,3,6
+M4_1,T Cells 1,4,1
+M4_2,Inflammation 1,4,2
+M4_3,Protein Synthesis 2,4,3
+M4_4,Erythropoeisis 4,4,4
+M4_5,Protein Synthesis 3,4,5
+M4_6,Myeloid Lineage 3,4,6
+M4_7,Lymphoid Lineage 1,4,7
+M4_8,Hypothetical Proteins,4,8
+M4_9,Granulocytes 1,4,9
+M4_10,B Cells 1,4,10
+M4_11,Plasma Cells 1,4,11
+M4_12,Unnamed 3,4,12
+M4_13,Myeloid Lineage 2,4,13
+M4_14,Monocytes 1,4,14
+M4_15,Cytotoxicity / NK Cells 2,4,15
+M4_16,Unnamed 4,4,16
+M5_1,Inflammation 2,5,1
+M5_2,Unnamed 5,5,2
+M5_3,Erythropoeisis 1,5,3
+M5_4,Protein Synthesis 4,5,4
+M5_5,Unnamed 6,5,5
+M5_6,Mitochondria / Proteasome 3,5,6
+M5_7,Myeloid Lineage 5,5,7
+M5_8,Unnamed 7,5,8
+M5_9,Protein Synthesis 5,5,9
+M5_10,Mitochondria / Proteasome 1,5,10
+M5_11,Lymphoid Lineage 2,5,11
+M5_12,IFN Response 3,5,12
+M5_13,Mitochondria / Proteasome 2,5,13
+M5_14,Myeloid Lineage 4,5,14
+M5_15,Neutrophils 1,5,15
+M6_1,Unnamed 8,6,1
+M6_2,Mitochondria / Proteasome 4,6,2
+M6_3,Unnamed 11,6,3
+M6_4,Unnamed 12,6,4
+M6_5,Unnamed 13,6,5
+M6_6,Myeloid Lineage 6,6,6
+M6_7,Lymphoid Lineage 4,6,7
+M6_8,Unnamed 14,6,8
+M6_9,Lymphoid Lineage 5,6,9
+M6_10,Unnamed 9,6,10
+M6_11,Cell Cycle 2,6,11
+M6_12,Lymphoid Lineage 3,6,12
+M6_13,Inflammation 3,6,13
+M6_14,Coagulation / Platelets 2,6,14
+M6_15,T Cells 2,6,15
+M6_16,Cell Cycle 3,6,16
+M6_17,Unnamed 10,6,17
+M6_18,Erythropoeisis 5,6,18
+M6_19,T Cells 3,6,19
+M6_20,Neutrophils 2,6,20
+M7_1,Unnamed 15,7,1
+M7_2,Unnamed 23,7,2
+M7_3,Unnamed 28,7,3
+M7_4,Mitochondria / Proteasome 5,7,4
+M7_5,Unnamed 31,7,5
+M7_6,Cell Cycle 4,7,6
+M7_7,Plasma Cells 3,7,7
+M7_8,Unnamed 32,7,8
+M7_9,Unnamed 33,7,9
+M7_10,Lipid Synthesis 1,7,10
+M7_11,Unnamed 16,7,11
+M7_12,Unnamed 17,7,12
+M7_13,Unnamed 18,7,13
+M7_14,Unnamed 19,7,14
+M7_15,Granulocytes 2,7,15
+M7_16,Histones,7,16
+M7_17,Unnamed 20,7,17
+M7_18,Unnamed 21,7,18
+M7_19,Unnamed 22,7,19
+M7_20,Protein Synthesis 6,7,20
+M7_21,Unnamed 24,7,21
+M7_22,Monocytes 2,7,22
+M7_23,Unnamed 25,7,23
+M7_24,Lymphoid Lineage 6,7,24
+M7_25,Lymphoid Lineage 7,7,25
+M7_26,Unnamed 26,7,26
+M7_27,Myeloid Lineage 7,7,27
+M7_28,Unnamed 27,7,28
+M7_29,Myeloid Lineage 8,7,29
+M7_30,Unnamed 29,7,30
+M7_31,Erythropoeisis 6,7,31
+M7_32,Plasma Cells 2,7,32
+M7_33,Erythropoeisis 7,7,33
+M7_34,Unnamed 30,7,34
+M7_35,Myeloid Lineage 9,7,35
+M8_1,Unnamed 34,8,1
+M8_2,Unnamed 54,8,2
+M8_3,Unnamed 64,8,3
+M8_4,Unnamed 72,8,4
+M8_5,Unnamed 82,8,5
+M8_6,Unnamed 89,8,6
+M8_7,Unnamed 98,8,7
+M8_8,Unnamed 104,8,8
+M8_9,Unnamed 111,8,9
+M8_10,Unnamed 35,8,10
+M8_11,Unnamed 45,8,11
+M8_12,Unnamed 47,8,12
+M8_13,Unnamed 48,8,13
+M8_14,Unnamed 49,8,14
+M8_15,Unnamed 50,8,15
+M8_16,Lymphoid Lineage 8,8,16
+M8_17,Unnamed 51,8,17
+M8_18,Unnamed 52,8,18
+M8_19,Unnamed 53,8,19
+M8_20,Unnamed 55,8,20
+M8_21,Unnamed 56,8,21
+M8_22,Unnamed 57,8,22
+M8_23,Unnamed 58,8,23
+M8_24,Unnamed 59,8,24
+M8_25,Unnamed 60,8,25
+M8_26,Erythropoeisis 9,8,26
+M8_27,Unnamed 61,8,27
+M8_28,Unnamed 62,8,28
+M8_29,Unnamed 63,8,29
+M8_30,Unnamed 65,8,30
+M8_31,Unnamed 66,8,31
+M8_32,B Cells 3,8,32
+M8_33,Unnamed 67,8,33
+M8_34,Erythropoeisis 10,8,34
+M8_35,Unnamed 68,8,35
+M8_36,Unnamed 69,8,36
+M8_37,Unnamed 70,8,37
+M8_38,Unnamed 71,8,38
+M8_39,Hematopoiesis/Platelets 1,8,39
+M8_40,Unnamed 73,8,40
+M8_41,Unnamed 74,8,41
+M8_42,Unnamed 75,8,42
+M8_43,Unnamed 76,8,43
+M8_44,Unnamed 77,8,44
+M8_45,Unnamed 78,8,45
+M8_46,Cytotoxicity / NK Cells 3,8,46
+M8_47,Unnamed 79,8,47
+M8_48,Unnamed 80,8,48
+M8_49,Unnamed 81,8,49
+M8_50,Unnamed 83,8,50
+M8_51,Hematopoiesis/Platelets 2,8,51
+M8_52,Erythropoeisis 11,8,52
+M8_53,Erythropoeisis 12,8,53
+M8_54,Unnamed 84,8,54
+M8_55,Mature B Cells 1,8,55
+M8_56,Unnamed 85,8,56
+M8_57,Unnamed 86,8,57
+M8_58,Unnamed 87,8,58
+M8_59,Unnamed 88,8,59
+M8_60,Unnamed 90,8,60
+M8_61,Unnamed 91,8,61
+M8_62,Myeloid Lineage 10,8,62
+M8_63,Unnamed 92,8,63
+M8_64,Unnamed 93,8,64
+M8_65,Unnamed 94,8,65
+M8_66,Unnamed 95,8,66
+M8_67,Unnamed 96,8,67
+M8_68,Hematopoietic Stem Cells 1,8,68
+M8_69,Unnamed 97,8,69
+M8_70,B Cells/Granulocytes 1,8,70
+M8_71,B Cells/mDC/Granulocytes,8,71
+M8_72,Unnamed 99,8,72
+M8_73,Hematopoietic Stem Cells 2,8,73
+M8_74,Unnamed 100,8,74
+M8_75,Unnamed 101,8,75
+M8_76,B Cells 4,8,76
+M8_77,Erythropoeisis 13,8,77
+M8_78,Unnamed 102,8,78
+M8_79,Unnamed 103,8,79
+M8_80,Unnamed 105,8,80
+M8_81,Unnamed 106,8,81
+M8_82,Unnamed 107,8,82
+M8_83,MHC Class II,8,83
+M8_84,Lymphoid Lineage 9,8,84
+M8_85,Unnamed 108,8,85
+M8_86,Erythropoeisis 14,8,86
+M8_87,B Cells/Granulocytes 2,8,87
+M8_88,Unnamed 109,8,88
+M8_89,Unnamed 110,8,89
+M8_90,Mature B Cells 2,8,90
+M8_91,B Cells/Granulocytes 3,8,91
+M8_92,Unnamed 112,8,92
+M8_93,Unnamed 113,8,93
+M8_94,Myeloid Lineage 11,8,94
+M8_95,Unnamed 114,8,95
+M8_96,Unnamed 115,8,96
+M8_97,Unnamed 116,8,97
+M8_98,Unnamed 117,8,98
+M8_99,Unnamed 118,8,99
+M8_100,Unnamed 36,8,100
+M8_101,Unnamed 37,8,101
+M8_102,Unnamed 38,8,102
+M8_103,Unnamed 39,8,103
+M8_104,Unnamed 40,8,104
+M8_105,Unnamed 41,8,105
+M8_106,Unnamed 42,8,106
+M8_107,Unnamed 43,8,107
+M8_108,Unnamed 44,8,108
+M8_109,B Cells 2,8,109
+M8_110,Erythropoeisis 8,8,110
+M8_111,Unnamed 46,8,111
+M9_1,Unnamed 119,9,1
+M9_2,Unnamed 130,9,2
+M9_3,Unnamed 141,9,3
+M9_4,Unnamed 152,9,4
+M9_5,Unnamed 163,9,5
+M9_6,Unnamed 167,9,6
+M9_7,Unnamed 168,9,7
+M9_8,Unnamed 169,9,8
+M9_9,Unnamed 170,9,9
+M9_10,Unnamed 120,9,10
+M9_11,Unnamed 121,9,11
+M9_12,Unnamed 122,9,12
+M9_13,Unnamed 123,9,13
+M9_14,Unnamed 124,9,14
+M9_15,Unnamed 125,9,15
+M9_16,Unnamed 126,9,16
+M9_17,Unnamed 127,9,17
+M9_18,Unnamed 128,9,18
+M9_19,Unnamed 129,9,19
+M9_20,Unnamed 131,9,20
+M9_21,Unnamed 132,9,21
+M9_22,Unnamed 133,9,22
+M9_23,Unnamed 134,9,23
+M9_24,Unnamed 135,9,24
+M9_25,Unnamed 136,9,25
+M9_26,Unnamed 137,9,26
+M9_27,Unnamed 138,9,27
+M9_28,Unnamed 139,9,28
+M9_29,Unnamed 140,9,29
+M9_30,Unnamed 142,9,30
+M9_31,Unnamed 143,9,31
+M9_32,Unnamed 144,9,32
+M9_33,Unnamed 145,9,33
+M9_34,Unnamed 146,9,34
+M9_35,Unnamed 147,9,35
+M9_36,Unnamed 148,9,36
+M9_37,Unnamed 149,9,37
+M9_38,Unnamed 150,9,38
+M9_39,Unnamed 151,9,39
+M9_40,Unnamed 153,9,40
+M9_41,Unnamed 154,9,41
+M9_42,Unnamed 155,9,42
+M9_43,Unnamed 156,9,43
+M9_44,Unnamed 157,9,44
+M9_45,Unnamed 158,9,45
+M9_46,Unnamed 159,9,46
+M9_47,Unnamed 160,9,47
+M9_48,Unnamed 161,9,48
+M9_49,Unnamed 162,9,49
+M9_50,Unnamed 164,9,50
+M9_51,Unnamed 165,9,51
+M9_52,Unnamed 166,9,52

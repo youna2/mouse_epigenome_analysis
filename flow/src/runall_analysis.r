@@ -1,12 +1,19 @@
-
+library(pheatmap)
 library(reshape2)
 library(ggplot2)
 
 
 source("library_function.r")
-
+source("../../ATACseq/src/PVCA.r")
 load("../data/flow_data_table.Rdata")
-
+meta=flow[,1:4]
+colnames(meta)=c("TISSUE","STRAIN","GENDER","AGE")
+dat=as.matrix(flow[,-(1:5)])
+dat=matrix(as.numeric(dat),nr=nrow(dat),nc=ncol(dat))
+res=PVCA(t(dat[rowSums(is.na(dat))==0,]),meta[rowSums(is.na(dat))==0,],1)
+pdf(file="../results/PVCA_flow.pdf")
+PlotPVCA(res, "")
+dev.off()
 #### 3. Start analysis ###################
 
 TRANSFORM=F
@@ -16,8 +23,8 @@ dat=as.data.frame(flow)
 for(i in c(4,6:ncol(dat))) dat[,i]=as.numeric(as.matrix(dat[,i]))
 
 
-dat$cd4.cd8.ratio=as.numeric(flow[,"CD4.Viable"])/as.numeric(flow[,"CD8.Viable"])
-dat$cd4.cd8.lymph.ratio=as.numeric(flow[,"CD4.Lymphocytes"])/as.numeric(flow[,"CD8.Lymphocytes"])
+dat$CD4.CD8.ratio=as.numeric(flow[,"CD4.Viable"])/as.numeric(flow[,"CD8.Viable"])
+dat$CD4.CD8.Lymphocytes.ratio=as.numeric(flow[,"CD4.Lymphocytes"])/as.numeric(flow[,"CD8.Lymphocytes"])
 dat$CD4.Naive.EMRA=as.numeric(flow[,"CD4.Naive"])+as.numeric(flow[,"CD4.EMRA"])
 dat$CD8.Naive.EMRA=as.numeric(flow[,"CD8.Naive"])+as.numeric(flow[,"CD8.EMRA"])
 
@@ -41,7 +48,7 @@ abline(0,1)
 plot(dat0$CD8.Viable,dat0$CD8.Lymphocytes,xlab="CD8.Viable",ylab="CD8.Lymphocytes")
 abline(0,1)
 
-plot(dat0$cd4.cd8.ratio,dat0$cd4.cd8.lymph.ratio,xlab="CD4.Viable/CD8.Viable",ylab="CD4.Lymphocytes/CD8.Lymphocytes")
+plot(dat0$CD4.CD8.ratio,dat0$CD4.CD8.Lymphocytes.ratio,xlab="CD4.Viable/CD8.Viable",ylab="CD4.Lymphocytes/CD8.Lymphocytes")
 abline(0,1)
 
 
@@ -53,7 +60,7 @@ ggdf <- melt(dat0,id.vars = c("tissue","type", "Sex","new"),measure.vars=c("B.Ly
 subplot(ggdf)
 
 
-ggdf <- melt(dat0,id.vars = c("tissue","type", "Sex","new"),measure.vars=c("cd4.cd8.ratio","cd4.cd8.lymph.ratio"))
+ggdf <- melt(dat0,id.vars = c("tissue","type", "Sex","new"),measure.vars=c("CD4.CD8.ratio","CD4.CD8.Lymphocytes.ratio"))
 #subplot3(ggdf,"NA")
 
 
@@ -243,23 +250,40 @@ percent.vs.type.interaction.coef= cbind(percent.vs.type.interaction.coef2,percen
 
 ### test if the intercept and slope for aging effect is different between gender and strain. For the column "M-F in B6” , 1 means slope/intercept for male is larger than female, -1 means the opposite and blank means that there is no significant difference
 
+cd38var=c( "CD38.B", "CD38.CD4", "CD38.CD8", "CD38.CD4.Naive", "CD38.CD4.CM" , "CD38.CD4.EM" , "CD38.CD4.EMRA", "CD38.CD8.Naive", "CD38.CD8.CM" , "CD38.CD8.EM" ,  "CD38.CD8.EMRA" )
 
 var=c("dat$SexM","tempdat$SexF","dat$typeNZO","tempdat$typeB6")
-x=sign(percent.vs.type.interaction.coef[,var])*pvalue.convert(percent.vs.type.interaction.p[,var])
+x=sign(percent.vs.type.interaction.coef[,var])*percent.vs.type.interaction.p[,var]
 x[,c(2,4)]= -x[,c(2,4)]
 colnames(x)=c("M-F in B6","M-F in NZO","NZO-B6 in F","NZO-B6 in M")
 rownames(x)=rownames(R1)
-x[x==0]=""
-if(analyze.spleen) write.csv(x,file="../results/difference_of_intercept_SPL.csv",quote=F) else write.csv(x,file="../results/difference_of_intercept_PBL.csv",quote=F)
+if(!analyze.spleen) x[cd38var,-1]=1
 
+x=x[c(4:6,53,7:10,54,11:14,55,15:47),]
+pheatmap(-sign(x)*log(abs(x)),cluster_cols = FALSE,cluster_rows = FALSE,scale="none",main="Difference of intercepts")
+y=sign(x)*pvalue.convert(abs(x))
+y[y==0]=""
+if(analyze.spleen)
+  {
+    write.csv(y,file="../results/difference_of_intercept_SPL.csv",quote=F)
+  } else
+{
+  write.csv(y,file="../results/difference_of_intercept_PBL.csv",quote=F)
+}
 
 var=c("dat$age:dat$SexM","tempdat$age:tempdat$SexF" ,"dat$age:dat$typeNZO","tempdat$age:tempdat$typeB6")
-x=sign(percent.vs.type.interaction.coef[,var])*pvalue.convert(percent.vs.type.interaction.p[,var])
+x=sign(percent.vs.type.interaction.coef[,var])*percent.vs.type.interaction.p[,var]
 x[,c(2,4)]= -x[,c(2,4)]
 colnames(x)=c("M-F in B6","M-F in NZO","NZO-B6 in F","NZO-B6 in M")
 rownames(x)=rownames(R1)
-x[x==0]=""
-if(analyze.spleen) write.csv(x,file="../results/difference_of_slope_SPL.csv",quote=F) else {x[,2]="";write.csv(x,file="../results/difference_of_slope_PBL.csv",quote=F)}
+if(!analyze.spleen) x[cd38var,-1]=1
+x=x[c(4:6,53,7:10,54,11:14,55,15:47),]
+pheatmap(-sign(x)*log(abs(x)),cluster_cols = FALSE,cluster_rows = FALSE,scale="none",main="Difference of slopes")
+y=sign(x)*pvalue.convert(abs(x))
+y[y==0]=""
+
+
+if(analyze.spleen) write.csv(y,file="../results/difference_of_slope_SPL.csv",quote=F) else write.csv(y,file="../results/difference_of_slope_PBL.csv",quote=F)
 
 dev.off()
 

@@ -26,7 +26,8 @@ if(selB6)
     pdf(file="diffpeakNZO.pdf")
     topgene="NZOtopgene"
   }
-
+twoway.barplot.argF1=twoway.barplot.argF2=twoway.barplot.argF3=NULL
+twoway.barplot.argM1=twoway.barplot.argM2=twoway.barplot.argM3=NULL
 for(i in 1:length(utissue))
   {
     y=y0[,tissue0==utissue[i]& gender0=="M"]
@@ -49,6 +50,7 @@ for(i in 1:length(utissue))
 #### print number of age-increasing/decreasing peaks or genes  #################
     print("In Tissue") 
     print(utissue[i])
+
     print("In Female, significantly changing peaks/genes")
     print( sum(atac.glmtopF[,"FDR"]<p.cutoff))
     print("In Female, significantly increasing peaks/genes")
@@ -56,15 +58,23 @@ for(i in 1:length(utissue))
     print("In Female, significantly decreasing peaks/genes")
     print( sum(atac.glmtopF[,"FDR"]<p.cutoff & atac.glmtopF[,"logFC"]<0))
 
+    twoway.barplot.argF1=c(twoway.barplot.argF1,rep(paste(utissue[i]),2))
+    twoway.barplot.argF2=c(twoway.barplot.argF2,c( sum(atac.glmtopF[,"FDR"]<p.cutoff & atac.glmtopF[,"logFC"]>0), -sum(atac.glmtopF[,"FDR"]<p.cutoff & atac.glmtopF[,"logFC"]<0)))
+    twoway.barplot.argF3=c(twoway.barplot.argF3,c("+","-"))
+      
+    
     print("In Male, significantly changing peaks/genes")
     print( sum(atac.glmtopM[,"FDR"]<p.cutoff))
     print("In Male, significantly increasing peaks/genes")
     print( sum(atac.glmtopM[,"FDR"]<p.cutoff & atac.glmtopM[,"logFC"]>0))
-
-
     print("In Male, significantly decreasing peaks/genes")
     print( sum(atac.glmtopM[,"FDR"]<p.cutoff & atac.glmtopM[,"logFC"]<0))
 
+    twoway.barplot.argM1=c(twoway.barplot.argM1,rep(paste(utissue[i]),2))
+    twoway.barplot.argM2=c(twoway.barplot.argM2,c( sum(atac.glmtopM[,"FDR"]<p.cutoff & atac.glmtopM[,"logFC"]>0), -sum(atac.glmtopM[,"FDR"]<p.cutoff & atac.glmtopM[,"logFC"]<0)))
+    twoway.barplot.argM3=c(twoway.barplot.argM3,c("+","-"))
+      
+    
     print("peaks/genes that are significantly changing in both male and female")
     print( sum(atac.glmtopM[,"FDR"]<p.cutoff & atac.glmtopF[,"FDR"]<p.cutoff))
 
@@ -99,7 +109,9 @@ for(i in 1:length(utissue))
         rownames(annot)=rownames(heatmapmat)
 
         if(min(heatmapmat)==0) heatmapmat=heatmapmat+1
-      
+
+
+
         pheatmap(log(heatmapmat),scale="row",cluster_cols = FALSE,main=paste(utissue[i],sex, sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]>0),"opening", sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]<0),"closing"),annotation_row=annot,show_rownames=F)
       }
         
@@ -107,14 +119,34 @@ for(i in 1:length(utissue))
 
   }
 colnames(fc.mat)=colnames(p.mat)=paste(rep(utissue,each=2),rep(c("F","M"),length(utissue)))
-
+save(p.mat,fc.mat,file="pmat_fcmat.Rdata")
 ### heatmap of p-values of peaks/genes across tissues and gender
 global.heatmap(p.mat,fc.mat)
 
-dev.off()
+
 
 ### peaks/genes that are commonly increasing/decreasing across tissues and gender
 common.peaks(p.mat,fc.mat,TRUE,topgene,annotation)
+
+f.increasing=nrow(read.delim(paste(topgene,"_F_increasing",".txt",sep="")))
+f.decreasing=nrow(read.delim(paste(topgene,"_F_decreasing",".txt",sep="")))
+m.increasing=nrow(read.delim(paste(topgene,"_M_increasing",".txt",sep="")))
+m.decreasing=nrow(read.delim(paste(topgene,"_M_decreasing",".txt",sep="")))
+
+twoway.barplot.argF1=c(twoway.barplot.argF1,rep("common",2))
+twoway.barplot.argF2=c(twoway.barplot.argF2,c(f.increasing,-f.decreasing))
+twoway.barplot.argF3=c(twoway.barplot.argF3,c("+","-"))
+
+twoway.barplot.argM1=c(twoway.barplot.argM1,rep("common",2))
+twoway.barplot.argM2=c(twoway.barplot.argM2,c(m.increasing,-m.decreasing))
+twoway.barplot.argM3=c(twoway.barplot.argM3,c("+","-"))
+
+q1=twoway.barplot(twoway.barplot.argF1,twoway.barplot.argF2,twoway.barplot.argF3,(-10):10*1000,(-10):10*1000,"Tissue","no. differential peaks/genes",paste(type0[1]," F",sep=""),YLIM)
+
+q2=twoway.barplot(twoway.barplot.argM1,twoway.barplot.argM2,twoway.barplot.argM3,(-10):10*1000,(-10):10*1000,"Tissue","no. differential peaks/genes",paste(type0[1]," M",sep=""),YLIM)
+
+multiplot(q1,NA,q2,NA,cols=2)
+
 
 
 tissue.gender.type <- c(colnames(p.mat),"_F_increasing","_F_decreasing","_M_increasing","_M_decreasing","_all_increasing","_all_decreasing")
@@ -128,8 +160,9 @@ diff.peaks(p.mat,fc.mat,topgene)
       {
         if(jj==1) tt=((p.mat<0.001 & fc.mat>0)) else tt=((p.mat<0.001 & fc.mat<0))
 
-        fisher.p=fisher.p0=matrix(NA,nr=ncol(p.mat),nc=ncol(p.mat))
+        fisher.p=fisher.p0=fisher.stat=matrix(NA,nr=ncol(p.mat),nc=ncol(p.mat))
         rownames(fisher.p)=colnames(fisher.p)=colnames(p.mat)
+        rownames(fisher.stat)=colnames(fisher.stat)=colnames(p.mat)
 
         for(i in 1:ncol(tt))
           for(j in 1:ncol(tt))
@@ -146,16 +179,28 @@ diff.peaks(p.mat,fc.mat,topgene)
                   whitepick=temp[2,2]-1
                   fisher.p0[i,j]=  1-phyper(whitepick,white,black,pick)
                   fisher.p[i,j]=   fisher.test(temp,alternative="greater")$"p.value"
+                  fisher.stat[i,j]=   fisher.test(temp,alternative="greater")$"estimate"
                 }
             }
-        fisher.p-fisher.p0 ## to check if my calculation is correct
+        print(mean(abs(fisher.p-fisher.p0)),na.rm=T) ## to check if my calculation is correct
         fisher.p=signif(fisher.p,2)
         fisher.p[upper.tri(fisher.p,diag=T)]="*"
+        fisher.stat[upper.tri(fisher.stat,diag=T)]= 0
 
-        if(jj==1) write.csv(fisher.p,file=paste("fisher_pvalue_increasing_B6_",selB6,".csv",sep=""),quote=F) else write.csv(fisher.p,file=paste("fisher_pvalue_decreasing_B6_",selB6,".csv",sep=""),quote=F)
+        if(jj==1)
+          {
+            write.csv(fisher.p,file=paste("fisher_pvalue_increasing_B6_",selB6,".csv",sep=""),quote=F)
 
+            pheatmap(fisher.stat,scale="none",cluster_cols = FALSE,cluster_rows=FALSE,main=paste("overlap of increasing peaks in",TYPE,"(odds ratio)"))
+            #
+          } else
+        {
+          write.csv(fisher.p,file=paste("fisher_pvalue_decreasing_B6_",selB6,".csv",sep=""),quote=F)
+          
+          pheatmap(fisher.stat,scale="none",cluster_cols = FALSE,cluster_rows=FALSE,main=paste("overlap of decreasing peaks in ",TYPE,"(odds ratio)"))
+        }
       }
-  
+dev.off()  
 #### Do pathway analysis using immune genes ####
 
 library("biomaRt")

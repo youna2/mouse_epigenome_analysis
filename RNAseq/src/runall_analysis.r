@@ -4,16 +4,21 @@ library(edgeR)
 
 load("../../RNAseq/data/RNAseqData.Rdata")
 source("../../ATACseq/src/library_function.r")
-
+source("../../ATACseq/src/PVCA.r")
 #### normalization #####
 
 y <- DGEList(counts=bed)
 Y <- calcNormFactors(y,method="TMM")
 
-bed[,]= cpm(Y, normalized.lib.sizes=TRUE)
 
 pdf(file="../results/PCA_RNA.pdf")
-color.var=cbind(TISSUE,TYPE,AGE,GENDER)
+STRAIN=TYPE
+color.var=cbind(TISSUE,STRAIN,AGE,GENDER)
+
+res=PVCA(bed,color.var,1)
+PlotPVCA(res, "")
+
+bed[,]= cpm(Y, normalized.lib.sizes=TRUE)
 PCA(bed,color.var)
 dev.off()
 
@@ -29,6 +34,7 @@ tid=1
 if(tid==1) selB6=TRUE
 if(tid==2) selB6=FALSE
 
+YLIM=c(-5000,5000)
 if(tid==3 | tid==4) source("../../ATACseq/src/find_differential_peak_or_gene_strain.r") else source("../../ATACseq/src/find_differential_peak_or_gene.r")
 
 

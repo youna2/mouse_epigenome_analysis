@@ -4,7 +4,15 @@ p.cutoff=0.01
 p.mat.strain=NULL ##bed[,"p.value"]
 fc.mat.strain= NULL  ##-bed[,"Fold"]
 
-if(tid==3) typeinteraction=TRUE else typeinteraction=FALSE
+if(tid==3)
+  {
+    typeinteraction=TRUE
+    int.or.slope="slope"
+  }else
+{
+  typeinteraction=FALSE
+  int.or.slope="intercept"
+}
 
 #### remove samples of age 26.75 months ######
 
@@ -25,6 +33,8 @@ if(typeinteraction) pdf("diffpeakstrain_B6_vs_NZO_slope.pdf") else  pdf("diffpea
 
 topgene="topgene"
 
+twoway.barplot.arg1=twoway.barplot.arg2=twoway.barplot.arg3=NULL
+
 for(i in 1:length(utissue))
   {
     y=y0[,tissue0==utissue[i]]
@@ -39,6 +49,12 @@ for(i in 1:length(utissue))
     print("peaks significantly different between strains")
     print( sum(atac.glmtop.strain[,"FDR"]<p.cutoff))
 
+                                       
+    twoway.barplot.arg1=c(twoway.barplot.arg1,rep(paste(utissue[i]),2))
+    twoway.barplot.arg2=c(twoway.barplot.arg2,c( sum(atac.glmtop.strain[,"FDR"]<p.cutoff & atac.glmtop.strain[,"logFC"]>0), -sum(atac.glmtop.strain[,"FDR"]<p.cutoff & atac.glmtop.strain[,"logFC"]<0)))
+    twoway.barplot.arg3=c(twoway.barplot.arg3,c("higher in NZO","lower in NZO"))
+
+    
 #### draw heatmap of age-increasing/decreasing peaks or genes  #################
     
     atac.glmtop=atac.glmtop.strain
@@ -82,19 +98,36 @@ for(i in 1:length(utissue))
     pheatmap(log(heatmapmat),scale="row",cluster_cols = FALSE,main=paste(utissue[i], sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]>0),"higher", sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]<0),"lower"),annotation_row=annot,show_rownames=F)
     
  #   
-colnames(fc.mat.strain)[ncol(fc.mat.strain)]=colnames(p.mat.strain)[ncol(p.mat.strain)]=paste(utissue[i],"strain")
+colnames(fc.mat.strain)[ncol(fc.mat.strain)]=colnames(p.mat.strain)[ncol(p.mat.strain)]=paste(utissue[i],int.or.slope)
   }
   }
-
+save(p.mat.strain,fc.mat.strain,file=paste("pmat_fcmat_",int.or.slope,".Rdata",sep=""))
 #### heatmap of p-values of peaks/genes across tissue 
 global.heatmap(p.mat.strain,fc.mat.strain)
 
-dev.off()
+
 
 ### peaks/genes that are commonly increasing/decreasing across tissues
 common.peaks(p.mat.strain,fc.mat.strain,FALSE,topgene,annotation)
 
 
+all.increasing=nrow(read.delim(paste(topgene,"_all_increasing",".txt",sep="")))
+all.decreasing=nrow(read.delim(paste(topgene,"_all_decreasing",".txt",sep="")))
+
+
+twoway.barplot.arg1=c(twoway.barplot.arg1,rep("common",2))
+twoway.barplot.arg2=c(twoway.barplot.arg2,c(all.increasing,-all.decreasing))
+twoway.barplot.arg3=c(twoway.barplot.arg3,c("higher in NZO","lower in NZO"))
+
+
+q1=twoway.barplot.strain(twoway.barplot.arg1,twoway.barplot.arg2,twoway.barplot.arg3,(-10):10*1000,(-10):10*1000,"Tissue","no. differential peaks/genes",paste("B6 vs NZO",int.or.slope),YLIM)
+
+
+multiplot(q1,NA,NA,NA,cols=2)
+
+
+
+##
 
 tissue.gender.type <- colnames(p.mat.strain)
 
@@ -114,8 +147,9 @@ diff.peaks(p.mat,fc.mat,topgene)
       {
         if(jj==1) tt=((p.mat<0.001 & fc.mat>0)) else tt=((p.mat<0.001 & fc.mat<0))
 
-        fisher.p=fisher.p0=matrix(NA,nr=ncol(p.mat),nc=ncol(p.mat))
+        fisher.p=fisher.p0=fisher.stat=matrix(NA,nr=ncol(p.mat),nc=ncol(p.mat))
         rownames(fisher.p)=colnames(fisher.p)=colnames(p.mat)
+        rownames(fisher.stat)=colnames(fisher.stat)=colnames(p.mat)
 
         for(i in 1:ncol(tt))
           for(j in 1:ncol(tt))
@@ -132,16 +166,27 @@ diff.peaks(p.mat,fc.mat,topgene)
                   whitepick=temp[2,2]-1
                   fisher.p0[i,j]=  1-phyper(whitepick,white,black,pick)
                   fisher.p[i,j]=   fisher.test(temp,alternative="greater")$"p.value"
+                  fisher.stat[i,j]=   fisher.test(temp,alternative="greater")$"estimate"
                 }
             }
-        fisher.p-fisher.p0 ## to check if my calculation is correct
+        print(mean(abs(fisher.p-fisher.p0),na.rm=T)) ## to check if my calculation is correct
         fisher.p=signif(fisher.p,2)
         fisher.p[upper.tri(fisher.p,diag=T)]="*"
+        fisher.stat[upper.tri(fisher.stat,diag=T)]= 0
 
-        if(jj==1) write.csv(fisher.p,file=paste("fisher_pvalue_increasing_strain.csv",sep=""),quote=F) else write.csv(fisher.p,file=paste("fisher_pvalue_decreasing_strain.csv",sep=""),quote=F)
+        if(jj==1)
+          {
+            write.csv(fisher.p,file=paste("fisher_pvalue_increasing_strain.csv",sep=""),quote=F)
+            pheatmap(fisher.stat,scale="none",cluster_cols = FALSE,cluster_rows=FALSE,main=paste("overlap of peaks higher in NZO (odds ratio)"))
 
+          } else
+        {
+          write.csv(fisher.p,file=paste("fisher_pvalue_decreasing_strain.csv",sep=""),quote=F)
+          pheatmap(fisher.stat,scale="none",cluster_cols = FALSE,cluster_rows=FALSE,main=paste("overlap of peaks lowerer in NZO (odds ratio)"))
+
+        }
       }
-  
+dev.off()  
 #### Do pathway analysis using immune genes ####
 
 library("biomaRt")
@@ -150,7 +195,7 @@ load("../../ATACseq/data/biomaRt_human_mouse.Rdata")
 
 load("../../ATACseq/data/mousehumangene_annotation.Rdata")
 
-all.path.res=vector("list",2)
+all.path.res=vector("list",4)
 for(pathwaytype in 1:2)
   {
     if(pathwaytype==1)
@@ -162,14 +207,14 @@ for(pathwaytype in 1:2)
         celltype.annotation=FALSE
       }
 
-enrichpath=vector("list",3)
-for(i in 1:3) enrichpath[[i]]=vector("list",length(tissue.gender.type))
+enrichpath=enrichpath.wiki=enrichpath.kegg=vector("list",3)
+for(i in 1:3) enrichpath[[i]]=enrichpath.wiki[[i]]=enrichpath.kegg[[i]]=vector("list",length(tissue.gender.type))
       
-for(N in 1:3)
+for(N in 2:3)
   {
     directionsel=N
-for(k in 1:length(tissue.gender.type))
-  {
+    for(k in 1:length(tissue.gender.type))
+      {
     temptissue=tissue.gender.type[k]
 
     scanfile=scan(paste(topgene,temptissue,".txt",sep=""))
@@ -178,8 +223,18 @@ for(k in 1:length(tissue.gender.type))
       {
    
         diff.gene=as.matrix(read.table(paste(topgene,temptissue,".txt",sep=""),header=F))### differential gene
-        if(directionsel==2) diff.gene=rbind(diff.gene[diff.gene[,3]>0,])
-        if(directionsel==3) diff.gene=rbind(diff.gene[diff.gene[,3]<0,])
+        if(directionsel==2)
+          {
+            diff.gene=rbind(diff.gene[diff.gene[,3]>0,])
+            directionselsymbol="positive"
+          }
+        
+        if(directionsel==3)
+          {
+            diff.gene=rbind(diff.gene[diff.gene[,3]<0,])
+            directionselsymbol="negative"
+          }
+        
         if(nrow(diff.gene)>1)
           {
         genesV2 = getLDS(attributes = c("entrezgene"), filters = "entrezgene", values = diff.gene[,1] , mart = mouse, attributesL = c("hgnc_symbol"), martL = human, uniqueRows=T)
@@ -192,7 +247,22 @@ for(k in 1:length(tissue.gender.type))
 
 
         human.diff.gene <- unique(genesV2[, 2]) ### human ortholog of the differential gene
-        write.table(human.diff.gene,file=paste(topgene,temptissue,"human.txt",sep=""),quote=F,row.names=F,col.names=F)
+        write.table(human.diff.gene,file=paste(topgene,temptissue,directionselsymbol,"human.txt",sep=""),quote=F,row.names=F,col.names=F)
+
+        if(N==2)
+          {
+        write.table(human.diff.gene,file="temp.txt",quote=F,row.names=F,col.names=F)
+        system("findGO.pl temp.txt human temp")
+        wiki=read.delim("temp/wikipathways.txt")
+        wiki=wiki[wiki[,3]< 10^(-3) ,c(2,4)]
+        wiki=wiki[match(unique(wiki[,1]),wiki[,1]),]
+        enrichpath.wiki[[N]][[k]]=wiki
+
+        wiki=read.delim("temp/kegg.txt")
+        wiki=wiki[wiki[,3]< 10^(-3) ,c(2,4)]
+        wiki=wiki[match(unique(wiki[,1]),wiki[,1]),]
+        enrichpath.kegg[[N]][[k]]=wiki
+      }
         allpath=NULL
 
         mean(human.diff.gene %in% gene.universe)
@@ -255,6 +325,9 @@ for(k in 1:length(tissue.gender.type))
   }
     all.path.res[[pathwaytype]]=enrichpath
   }
+all.path.res[[3]]=enrichpath.wiki
+all.path.res[[4]]=enrichpath.kegg
+
  save(all.path.res,file="enrichpathwayStrain.Rdata")
 
 

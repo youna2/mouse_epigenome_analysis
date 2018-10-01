@@ -3,17 +3,21 @@ p.cutoff=0.01
 
 p.mat.strain=NULL ##bed[,"p.value"]
 fc.mat.strain= NULL  ##-bed[,"Fold"]
-
-if(tid==3)
+if(tid==5)
   {
-    typeinteraction=TRUE
-    int.or.slope="slope"
-  }else
-{
-  typeinteraction=FALSE
-  int.or.slope="intercept"
-}
-
+    commonpattern=TRUE
+    int.or.slope="common"
+  }else{
+    commonpattern=FALSE
+    if(tid==3)
+      {
+        typeinteraction=TRUE
+        int.or.slope="slope"
+      }else{
+        typeinteraction=FALSE
+        int.or.slope="intercept"
+      }
+  }
 #### remove samples of age 26.75 months ######
 
 selectsample= (AGE != 26.75)
@@ -27,11 +31,31 @@ samplemouseid0=SAMPLEMOUSEID[selectsample]
 ## Do differential analysis between NZO and B6 in each tissue type ######
 
 setwd("../results")
+previous.dir=getwd()
 utissue=c( "spleen", "BM", "memory","naive", "PBL")         
 
-if(typeinteraction) pdf("diffpeakstrain_B6_vs_NZO_slope.pdf") else  pdf("diffpeakstrain_B6_vs_NZO_intercept.pdf")
+if(commonpattern)
+  {
+    pdf("commonpattern.pdf")
+    topgene="B6_NZO_common"
+    positivepeak="opening"
+    negativepeak="closing"
+  }else{
 
-topgene="topgene"
+    positivepeak="higher in NZO"
+    negativepeak="lower in NZO"
+
+    if(typeinteraction)
+      {
+        pdf("diffpeakstrain_B6_vs_NZO_slope.pdf")
+        topgene="B6_vs_NZO_slope"
+      }else{
+        pdf("diffpeakstrain_B6_vs_NZO_intercept.pdf")
+        topgene="B6_vs_NZO_intercept"
+      }
+  }
+
+
 
 twoway.barplot.arg1=twoway.barplot.arg2=twoway.barplot.arg3=NULL
 
@@ -43,16 +67,20 @@ for(i in 1:length(utissue))
     type=type0[tissue0==utissue[i]]
     if(length(unique(age[type=="B6"]))>1 & length(unique(age[type=="NZO"]))>1)
       {
-        ### Do differential analysis between NZO and B6
-    atac.glmtop.strain=edgeRfitstrain(y,age,gender,type)
-   
-    print("peaks significantly different between strains")
-    print( sum(atac.glmtop.strain[,"FDR"]<p.cutoff))
+        ### Do differential or common analysis between NZO and B6
 
-                                       
+        
+        if(commonpattern)  atac.glmtop.strain=edgeRfit(y,age,gender,type) else atac.glmtop.strain=edgeRfitstrain(y,age,gender,type)
+    
+
+        sel=which(atac.glmtop.strain[,"FDR"]<0.05)
+        write.table(cbind(annotation[ sel,"Entrez.ID"],NA,atac.glmtop.strain[sel,"logFC"]),file=paste(topgene,paste(utissue[i],int.or.slope),".txt",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
+
+        
     twoway.barplot.arg1=c(twoway.barplot.arg1,rep(paste(utissue[i]),2))
     twoway.barplot.arg2=c(twoway.barplot.arg2,c( sum(atac.glmtop.strain[,"FDR"]<p.cutoff & atac.glmtop.strain[,"logFC"]>0), -sum(atac.glmtop.strain[,"FDR"]<p.cutoff & atac.glmtop.strain[,"logFC"]<0)))
-    twoway.barplot.arg3=c(twoway.barplot.arg3,c("higher in NZO","lower in NZO"))
+
+    twoway.barplot.arg3=c(twoway.barplot.arg3,c("+","-"))
 
     
 #### draw heatmap of age-increasing/decreasing peaks or genes  #################
@@ -64,9 +92,11 @@ for(i in 1:length(utissue))
 
     
     annot.row=annot=atac.glmtop[atac.glmtop[,"FDR"]<p.cutoff,"logFC"]
-    annot[annot.row>0]="higher in NZO"
-    annot[annot.row<0]="lower in NZO"
 
+    annot[annot.row>0]=positivepeak
+    annot[annot.row<0]=negativepeak
+ 
+ 
     
     colnames(heatmapmat)=paste( type,"_", samplemouseid0[tissue0==utissue[i]] ,"_",age,sep="")
    
@@ -86,17 +116,20 @@ for(i in 1:length(utissue))
     annot=as.data.frame(annot)
     rownames(annot)=rownames(heatmapmat)
 
+        if(commonpattern)
+          {
+            colnames(annot)="common"
+          }else{        
     if(typeinteraction)
       {
         colnames(annot)="slope"
       }else{
         colnames(annot)="intercept"
       }
-
+  }
     if(min(heatmapmat)==0) heatmapmat=heatmapmat+1
    
-    pheatmap(log(heatmapmat),scale="row",cluster_cols = FALSE,main=paste(utissue[i], sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]>0),"higher", sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]<0),"lower"),annotation_row=annot,show_rownames=F)
-    
+    pheatmap(log(heatmapmat),scale="row",cluster_cols = FALSE,main=paste(utissue[i], sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]>0),positivepeak, sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]<0),negativepeak),annotation_row=annot,show_rownames=F,color=colorRampPalette(c("blue","white","red"))(100))  
  #   
 colnames(fc.mat.strain)[ncol(fc.mat.strain)]=colnames(p.mat.strain)[ncol(p.mat.strain)]=paste(utissue[i],int.or.slope)
   }
@@ -117,10 +150,12 @@ all.decreasing=nrow(read.delim(paste(topgene,"_all_decreasing",".txt",sep="")))
 
 twoway.barplot.arg1=c(twoway.barplot.arg1,rep("common",2))
 twoway.barplot.arg2=c(twoway.barplot.arg2,c(all.increasing,-all.decreasing))
-twoway.barplot.arg3=c(twoway.barplot.arg3,c("higher in NZO","lower in NZO"))
+twoway.barplot.arg3=c(twoway.barplot.arg3,c("+","-"))
 
+ylimmax=max(abs(twoway.barplot.arg2))
+YLIM=c(-ylimmax,ylimmax)
 
-q1=twoway.barplot.strain(twoway.barplot.arg1,twoway.barplot.arg2,twoway.barplot.arg3,(-10):10*1000,(-10):10*1000,"Tissue","no. differential peaks/genes",paste("B6 vs NZO",int.or.slope),YLIM)
+q1=twoway.barplot(twoway.barplot.arg1,twoway.barplot.arg2,twoway.barplot.arg3,(-10):10*1000,(-10):10*1000,"Tissue","no. differential peaks/genes",paste("B6 vs NZO",int.or.slope),YLIM)
 
 
 multiplot(q1,NA,NA,NA,cols=2)
@@ -136,7 +171,7 @@ tissue.gender.type <- colnames(p.mat.strain)
 
 p.mat=p.mat.strain
 fc.mat=fc.mat.strain
-diff.peaks(p.mat,fc.mat,topgene)
+#diff.peaks(p.mat,fc.mat,topgene)
 
   
 
@@ -177,12 +212,12 @@ diff.peaks(p.mat,fc.mat,topgene)
         if(jj==1)
           {
             write.csv(fisher.p,file=paste("fisher_pvalue_increasing_strain.csv",sep=""),quote=F)
-            pheatmap(fisher.stat,scale="none",cluster_cols = FALSE,cluster_rows=FALSE,main=paste("overlap of peaks higher in NZO (odds ratio)"))
+            pheatmap(fisher.stat,scale="none",cluster_cols = FALSE,cluster_rows=FALSE,main=paste("overlap of peaks",positivepeak,"(odds ratio)"))
 
           } else
         {
           write.csv(fisher.p,file=paste("fisher_pvalue_decreasing_strain.csv",sep=""),quote=F)
-          pheatmap(fisher.stat,scale="none",cluster_cols = FALSE,cluster_rows=FALSE,main=paste("overlap of peaks lowerer in NZO (odds ratio)"))
+          pheatmap(fisher.stat,scale="none",cluster_cols = FALSE,cluster_rows=FALSE,main=paste("overlap of peaks",negativepeak,"(odds ratio)"))
 
         }
       }
@@ -249,19 +284,28 @@ for(N in 2:3)
         human.diff.gene <- unique(genesV2[, 2]) ### human ortholog of the differential gene
         write.table(human.diff.gene,file=paste(topgene,temptissue,directionselsymbol,"human.txt",sep=""),quote=F,row.names=F,col.names=F)
 
-        if(N==2)
+        if(pathwaytype==2)
           {
-        write.table(human.diff.gene,file="temp.txt",quote=F,row.names=F,col.names=F)
-        system("findGO.pl temp.txt human temp")
-        wiki=read.delim("temp/wikipathways.txt")
-        wiki=wiki[wiki[,3]< 10^(-3) ,c(2,4)]
-        wiki=wiki[match(unique(wiki[,1]),wiki[,1]),]
-        enrichpath.wiki[[N]][[k]]=wiki
+            setwd("~/homer")
+            
+            write.table(human.diff.gene,file="temp.txt",quote=F,row.names=F,col.names=F)
 
-        wiki=read.delim("temp/kegg.txt")
-        wiki=wiki[wiki[,3]< 10^(-3) ,c(2,4)]
+
+        
+        system("findGO.pl temp.txt human temp")
+        wiki=as.matrix(read.delim("temp/wikipathways.txt"))
+        wiki=rbind(wiki[as.numeric(wiki[,3])< 10^(-4) ,c(2,3)])
+       # wiki=wiki[match(unique(wiki[,1]),wiki[,1]),]
+        if(nrow(wiki)>0) enrichpath.wiki[[N]][[k]]=wiki
+
+        wiki=as.matrix(read.delim("temp/kegg.txt"))
+        wiki=rbind(wiki[as.numeric(wiki[,3])< 10^(-4) ,c(2,3)])
+        if(nrow(wiki)>0)
+          {
         wiki=wiki[match(unique(wiki[,1]),wiki[,1]),]
         enrichpath.kegg[[N]][[k]]=wiki
+      }
+        setwd(previous.dir)
       }
         allpath=NULL
 
@@ -332,7 +376,14 @@ all.path.res[[4]]=enrichpath.kegg
 
 
 ### draw plots of pathway analysis results ###
+
+if(commonpattern)
+  {
+    pdf(file="pathwayplot_commonpattern.pdf")
+  }else{
 if(typeinteraction) pdf(file="pathwayplot_B6_vs_NZO_slope.pdf") else  pdf(file="pathwayplot_B6_vs_NZO_intercept.pdf")
+  }
+
 source("../../ATACseq/src/plot.r")
 
 

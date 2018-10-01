@@ -112,7 +112,7 @@ for(i in 1:length(utissue))
 
 
 
-        pheatmap(log(heatmapmat),scale="row",cluster_cols = FALSE,main=paste(utissue[i],sex, sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]>0),"opening", sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]<0),"closing"),annotation_row=annot,show_rownames=F)
+        pheatmap(log(heatmapmat),scale="row",cluster_cols = FALSE,main=paste(utissue[i],sex, sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]>0),"opening", sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]<0),"closing"),annotation_row=annot,show_rownames=F,color=colorRampPalette(c("blue","white","red"))(100))
       }
         
       }
@@ -140,6 +140,9 @@ twoway.barplot.argF3=c(twoway.barplot.argF3,c("+","-"))
 twoway.barplot.argM1=c(twoway.barplot.argM1,rep("common",2))
 twoway.barplot.argM2=c(twoway.barplot.argM2,c(m.increasing,-m.decreasing))
 twoway.barplot.argM3=c(twoway.barplot.argM3,c("+","-"))
+
+ylimmax=max(abs(c(twoway.barplot.argM2,twoway.barplot.argF2)))
+YLIM=c(-ylimmax,ylimmax)
 
 q1=twoway.barplot(twoway.barplot.argF1,twoway.barplot.argF2,twoway.barplot.argF3,(-10):10*1000,(-10):10*1000,"Tissue","no. differential peaks/genes",paste(type0[1]," F",sep=""),YLIM)
 

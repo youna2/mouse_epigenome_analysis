@@ -6,6 +6,9 @@ library(ggplot2)
 source("library_function.r")
 source("../../ATACseq/src/PVCA.r")
 load("../data/flow_data_table.Rdata")
+
+#flow=flow[flow[,"age"]!="26" & flow[,"age"]!="27",]
+
 meta=flow[,1:4]
 colnames(meta)=c("TISSUE","STRAIN","GENDER","AGE")
 dat=as.matrix(flow[,-(1:5)])
@@ -257,10 +260,11 @@ x=sign(percent.vs.type.interaction.coef[,var])*percent.vs.type.interaction.p[,va
 x[,c(2,4)]= -x[,c(2,4)]
 colnames(x)=c("M-F in B6","M-F in NZO","NZO-B6 in F","NZO-B6 in M")
 rownames(x)=rownames(R1)
-if(!analyze.spleen) x[cd38var,-1]=1
+#if(!analyze.spleen) x[cd38var,-1]=1
 
 x=x[c(4:6,53,7:10,54,11:14,55,15:47),]
-pheatmap(-sign(x)*log(abs(x)),cluster_cols = FALSE,cluster_rows = FALSE,scale="none",main="Difference of intercepts")
+MAX=max(abs(-sign(x)*log(abs(x))),na.rm=T);breaksList = seq(-MAX, MAX, by = 1)
+pheatmap(-sign(x)*log(abs(x)),cluster_cols = FALSE,cluster_rows = FALSE,scale="none",main="Difference of intercepts",color = colorRampPalette(c("blue","white","red"))(length(breaksList)),breaks = breaksList)
 y=sign(x)*pvalue.convert(abs(x))
 y[y==0]=""
 if(analyze.spleen)
@@ -276,9 +280,11 @@ x=sign(percent.vs.type.interaction.coef[,var])*percent.vs.type.interaction.p[,va
 x[,c(2,4)]= -x[,c(2,4)]
 colnames(x)=c("M-F in B6","M-F in NZO","NZO-B6 in F","NZO-B6 in M")
 rownames(x)=rownames(R1)
-if(!analyze.spleen) x[cd38var,-1]=1
+#if(!analyze.spleen) x[cd38var,-1]=1
 x=x[c(4:6,53,7:10,54,11:14,55,15:47),]
-pheatmap(-sign(x)*log(abs(x)),cluster_cols = FALSE,cluster_rows = FALSE,scale="none",main="Difference of slopes")
+
+MAX=max(abs(-sign(x)*log(abs(x))),na.rm=T);breaksList = seq(-MAX, MAX, by = 1)
+pheatmap(-sign(x)*log(abs(x)),cluster_cols = FALSE,cluster_rows = FALSE,scale="none",main="Difference of slopes",color = colorRampPalette(c("blue","white","red"))(length(breaksList)),breaks = breaksList)
 y=sign(x)*pvalue.convert(abs(x))
 y[y==0]=""
 

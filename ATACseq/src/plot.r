@@ -2,7 +2,7 @@
 
                                         #load("/data/youna/mouse_aging/enrichpathway.Rdata")
 q1=q2=q3=q4=NA
-pathwaytype=c("(cell type)","(immune module)")
+pathwaytype=c("(cell type)","(immune module)","(wiki)","(kegg)")
 
 for(n in 1:length(all.path.res))
   {
@@ -50,6 +50,7 @@ for(n in 1:length(all.path.res))
                                 theme_minimal(base_size = 8) +
                                   theme(axis.text.y = element_text(size=8),aspect.ratio = 1,panel.grid.major.y = element_line(color="honeydew2"))+ggtitle(tissue.gender.type[k])
 
+                print(p1)
               }
            if(k %% 4==1) {q1=p1}
            if(k %% 4==2) {q2=p1}

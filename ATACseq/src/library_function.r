@@ -55,22 +55,6 @@ twoway.barplot <- function(x,y,z,labels,breaks,xlab,ylab,title,YLIM)
     return(p1)
   }
 
-twoway.barplot.strain <- function(x,y,z,labels,breaks,xlab,ylab,title,YLIM)
-  {
-    df=data.frame(x=x,y=y,z=z)
-    
-    p1=ggplot(df, aes(x,y,fill=z)) +
-      geom_bar(stat = "identity", position="identity",width=0.7,size=0.5,color="white") +
-        geom_hline(color="black",size=0.25,yintercept = 0) +
-          geom_hline(color="firebrick4",size=0.25,linetype=2,yintercept = 0) +
-            scale_fill_manual(values = c("lower in NZO"="dodgerblue","higher in NZO"="firebrick1"),guide=guide_legend(title = NULL)) +
-              coord_flip() +
-#                scale_y_continuous(labels = labels,breaks = breaks) +
-                  labs(x=xlab, y=ylab) +
-                    theme_minimal(base_size = 8) +
-                      theme(axis.text.y = element_text(size=8),aspect.ratio = 1,panel.grid.major.y = element_line(color="honeydew2"))+ggtitle(title)+ylim(YLIM)
-    return(p1)
-  }
 
 convert.from.ensembl.to.entrezID.mouse <- function(x)
 {
@@ -169,7 +153,7 @@ write.table(cbind(annotation[ sel,"Entrez.ID"],p.cut,-1),file=paste(topgene,"_al
 diff.peaks <- function(p.mat,fc.mat,topgene)
   {
 ### differential genes for each tissue ####
-
+df=NULL
     for(i in 1:ncol(p.mat))
       {
         temptissue=colnames(p.mat)[i]
@@ -177,8 +161,32 @@ diff.peaks <- function(p.mat,fc.mat,topgene)
         print(sum(p.adjust(p.mat[,i],"fdr")<0.05))
         sel=which(p.adjust(p.mat[,i],"fdr")<0.05)
         write.table(cbind(annotation[ sel,"Entrez.ID"],p.mat[sel,i],fc.mat[sel,i]),file=paste(topgene,temptissue,".txt",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
+
+
+        
+        sel=which(p.adjust(p.mat[,i],"fdr")<0.05 & fc.mat[,i]>0)
+        if(length(sel)>0) df=rbind(df,   cbind( paste(colnames(p.mat)[i],"+"), removing.paren(annotation[sel,"Annotation"])))
+        sel=which(p.adjust(p.mat[,i],"fdr")<0.05 & fc.mat[,i]<0)
+        if(length(sel)>0) df=rbind(df,   cbind(paste(colnames(p.mat)[i],"-"),removing.paren(annotation[sel,"Annotation"])))
+
       }
+temp=table(df[,1],df[,2])
+temp=temp/rowSums(temp)
+df=data.frame(tissue=rep(rownames(temp),ncol(temp)),percent=c(temp),annotation=rep(colnames(temp),each=nrow(temp)))
+
+p <- ggplot(data=df, aes(x=tissue, y=percent, fill=annotation)) +
+  geom_bar(stat="identity")+   scale_fill_brewer(palette = "Set3") +   ylab("Percent") +    ggtitle("Homer annotation of peaks")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+print( p)
+        
+      
   }
+removing.paren <- function(x)
+{
+  y=x
+  for(i in 1:length(x)) y[i]=strsplit(x[i],"[(]")[[1]][1]
+  return(y)
+}
 
 pick_null_pathway <- function(x)
   {
@@ -255,7 +263,7 @@ global.heatmap <- function(p.mat,fc.mat)
     if(nrow(x)>40000) x=x[sample(1:nrow(x),40000),]
     if(max(x)> abs(min(x))) x=rbind(x,-max(abs(x)))  else  x=rbind(x,max(abs(x)))#for color balance
     
-    if(tid==1 | tid==2)
+    if(tid==1 | tid==2 | tid==5)
       {
         pheatmap(x,scale="none",cluster_cols = FALSE, color = colorRampPalette(c("red4", "white", "blue4"))(100),show_rownames = F,main="log p* sign of change" )
       }

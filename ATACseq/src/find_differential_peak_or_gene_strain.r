@@ -3,10 +3,13 @@ p.cutoff=0.01
 
 p.mat.strain=NULL ##bed[,"p.value"]
 fc.mat.strain= NULL  ##-bed[,"Fold"]
-if(tid==5)
+if(tid>=5)
   {
     commonpattern=TRUE
-    int.or.slope="common"
+    if(tid==5) int.or.slope="common"
+    if(tid==6) int.or.slope="opposite"
+    if(tid==7) int.or.slope="NZO.signif"
+    if(tid==8) int.or.slope="B6.signif"
   }else{
     commonpattern=FALSE
     if(tid==3)
@@ -36,10 +39,22 @@ utissue=c( "spleen", "BM", "memory","naive", "PBL")
 
 if(commonpattern)
   {
-    pdf("commonpattern.pdf")
-    topgene="B6_NZO_common"
+    pdf(paste(int.or.slope,"pattern.pdf",sep="_"))
+    topgene=paste("B6_NZO",int.or.slope,sep="_")
+    if(tid==5)
+      {
     positivepeak="opening"
     negativepeak="closing"
+  }else{
+    if(tid==8)
+      {
+        positivepeak="higher in B6"
+        negativepeak="lower in B6"
+      }else{
+        positivepeak="higher in NZO"
+        negativepeak="lower in NZO"
+      }
+  }
   }else{
 
     positivepeak="higher in NZO"
@@ -70,10 +85,10 @@ for(i in 1:length(utissue))
         ### Do differential or common analysis between NZO and B6
 
         
-        if(commonpattern)  atac.glmtop.strain=edgeRfit(y,age,gender,type) else atac.glmtop.strain=edgeRfitstrain(y,age,gender,type)
+        if(commonpattern)  atac.glmtop.strain=edgeRfitcommon(y,age,gender,type) else atac.glmtop.strain=edgeRfitstrain(y,age,gender,type)
     
 
-        sel=which(atac.glmtop.strain[,"FDR"]<0.05)
+        sel=which(atac.glmtop.strain[,"FDR"]<p.cutoff)
         write.table(cbind(annotation[ sel,"Entrez.ID"],NA,atac.glmtop.strain[sel,"logFC"]),file=paste(topgene,paste(utissue[i],int.or.slope),".txt",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
 
         
@@ -84,7 +99,8 @@ for(i in 1:length(utissue))
 
     
 #### draw heatmap of age-increasing/decreasing peaks or genes  #################
-    
+        if(length(sel)>5)
+          {
     atac.glmtop=atac.glmtop.strain
     p.mat.strain=cbind(p.mat.strain,atac.glmtop[,"PValue"])
     fc.mat.strain=cbind(fc.mat.strain,atac.glmtop[,"logFC"])
@@ -133,12 +149,15 @@ for(i in 1:length(utissue))
  #   
 colnames(fc.mat.strain)[ncol(fc.mat.strain)]=colnames(p.mat.strain)[ncol(p.mat.strain)]=paste(utissue[i],int.or.slope)
   }
+      }
   }
 save(p.mat.strain,fc.mat.strain,file=paste("pmat_fcmat_",int.or.slope,".Rdata",sep=""))
+
+
+if(tid<5)
+  {
 #### heatmap of p-values of peaks/genes across tissue 
 global.heatmap(p.mat.strain,fc.mat.strain)
-
-
 
 ### peaks/genes that are commonly increasing/decreasing across tissues
 common.peaks(p.mat.strain,fc.mat.strain,FALSE,topgene,annotation)
@@ -151,6 +170,8 @@ all.decreasing=nrow(read.delim(paste(topgene,"_all_decreasing",".txt",sep="")))
 twoway.barplot.arg1=c(twoway.barplot.arg1,rep("common",2))
 twoway.barplot.arg2=c(twoway.barplot.arg2,c(all.increasing,-all.decreasing))
 twoway.barplot.arg3=c(twoway.barplot.arg3,c("+","-"))
+
+}
 
 ylimmax=max(abs(twoway.barplot.arg2))
 YLIM=c(-ylimmax,ylimmax)
@@ -166,15 +187,14 @@ multiplot(q1,NA,NA,NA,cols=2)
 
 tissue.gender.type <- colnames(p.mat.strain)
 
-
+if(tid<5)
+  {
 ### save differential peaks/genes of each tissue as a txt file ####
 
 p.mat=p.mat.strain
 fc.mat=fc.mat.strain
 #diff.peaks(p.mat,fc.mat,topgene)
-
   
-
 ### See if the age-related pattern is common across tissues
 
 
@@ -221,6 +241,7 @@ fc.mat=fc.mat.strain
 
         }
       }
+}
 dev.off()  
 #### Do pathway analysis using immune genes ####
 
@@ -252,7 +273,7 @@ for(N in 2:3)
       {
     temptissue=tissue.gender.type[k]
 
-    scanfile=scan(paste(topgene,temptissue,".txt",sep=""))
+    if(paste(topgene,temptissue,".txt",sep="") %in% dir())  scanfile=scan(paste(topgene,temptissue,".txt",sep=""))
 
     if(length(scanfile)>2)
       {
@@ -288,11 +309,11 @@ for(N in 2:3)
           {
             setwd("~/homer")
             
-            write.table(human.diff.gene,file="temp.txt",quote=F,row.names=F,col.names=F)
+            write.table(human.diff.gene,file=paste("temp",tid,".txt",sep=""),quote=F,row.names=F,col.names=F)
 
 
         
-        system("findGO.pl temp.txt human temp")
+        system(paste("findGO.pl temp",tid,".txt human temp",tid,sep=""))
         wiki=as.matrix(read.delim("temp/wikipathways.txt"))
         wiki=rbind(wiki[as.numeric(wiki[,3])< 10^(-4) ,c(2,3)])
        # wiki=wiki[match(unique(wiki[,1]),wiki[,1]),]
@@ -379,7 +400,9 @@ all.path.res[[4]]=enrichpath.kegg
 
 if(commonpattern)
   {
-    pdf(file="pathwayplot_commonpattern.pdf")
+
+    pdf(paste("pathway",int.or.slope,"pattern.pdf",sep="_"))
+
   }else{
 if(typeinteraction) pdf(file="pathwayplot_B6_vs_NZO_slope.pdf") else  pdf(file="pathwayplot_B6_vs_NZO_intercept.pdf")
   }

@@ -1,5 +1,5 @@
 
-p.cutoff=0.01
+p.cutoff=0.05
 
 p.mat=NULL ##bed[,"p.value"]
 fc.mat= NULL  ##-bed[,"Fold"]

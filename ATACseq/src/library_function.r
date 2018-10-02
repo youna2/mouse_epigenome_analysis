@@ -199,6 +199,106 @@ pick_null_pathway <- function(x)
   }
 
 #################
+
+edgeRfitcommon <- function(y,age,gender,type)
+  {
+
+    if(tid==5)
+      {
+    sel= (type=="B6")
+    resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+    sel= (type=="NZO")
+    resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+
+    res=matrix(1,nr=nrow(resB6),nc=ncol(resB6))
+    colnames(res)=colnames(resB6)
+    res[,"logFC"]=0
+    res[resB6[,"logFC"]<0 & resNZO[,"logFC"]<0,"logFC"]= -1
+    res[resB6[,"logFC"]>0 & resNZO[,"logFC"]>0,"logFC"]= 1
+
+    res[,"FDR"]=1
+    res[resB6[,"FDR"]< p.cutoff & resNZO[,"FDR"]<p.cutoff & res[,"logFC"]!=0 ,"FDR"]= p.cutoff/2
+  }
+
+ if(tid==6)
+      {
+    sel= (type=="B6")
+    resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+    sel= (type=="NZO")
+    resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+
+    res=matrix(1,nr=nrow(resB6),nc=ncol(resB6))
+    colnames(res)=colnames(resB6)
+    res[,"logFC"]=0
+    res[resB6[,"logFC"]>0 & resNZO[,"logFC"]<0,"logFC"]= -1
+    res[resB6[,"logFC"]<0 & resNZO[,"logFC"]>0,"logFC"]= 1
+
+    res[,"FDR"]=1
+    res[resB6[,"FDR"]< p.cutoff & resNZO[,"FDR"]<p.cutoff & res[,"logFC"]!=0 ,"FDR"]= p.cutoff/2
+  }
+
+     if(tid==7)
+      {
+    sel= (type=="B6")
+    resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+    sel= (type=="NZO")
+    resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+
+    res=matrix(1,nr=nrow(resB6),nc=ncol(resB6))
+    colnames(res)=colnames(resB6)
+    res[,"logFC"]=0
+    res[ resNZO[,"logFC"]<0,"logFC"]= -1
+    res[ resNZO[,"logFC"]>0,"logFC"]= 1
+
+    res[,"FDR"]=1
+    res[resB6[,"FDR"]>= p.cutoff & resNZO[,"FDR"]<p.cutoff & res[,"logFC"]!=0 ,"FDR"]= p.cutoff/2
+  }
+
+     if(tid==8)
+      {
+    sel= (type=="B6")
+    resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+    sel= (type=="NZO")
+    resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+
+    res=matrix(1,nr=nrow(resB6),nc=ncol(resB6))
+    colnames(res)=colnames(resB6)
+    res[,"logFC"]=0
+    res[ resB6[,"logFC"]<0,"logFC"]= -1
+    res[ resB6[,"logFC"]>0,"logFC"]= 1
+
+    res[,"FDR"]=1
+    res[resNZO[,"FDR"]>= p.cutoff & resB6[,"FDR"]<p.cutoff & res[,"logFC"]!=0 ,"FDR"]= p.cutoff/2
+  }
+
+    ## sel= (type=="B6" & gender =="M")
+    ## resB6M=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+    ## sel= (type=="NZO" & gender=="M")
+    ## resNZOM=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+
+    ## sel= (type=="B6" & gender =="F")
+    ## resB6F=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+    ## sel= (type=="NZO" & gender=="F")
+    ## resNZOF=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+ 
+
+    ## res=matrix(1,nr=nrow(resB6M),nc=ncol(resB6M))
+    ## colnames(res)=colnames(resB6M)
+    ## res[,"logFC"]=0
+    ## res[resB6M[,"logFC"]<0 & resNZOM[,"logFC"]<0 & resB6F[,"logFC"]<0 & resNZOF[,"logFC"]<0,"logFC"]= -1
+    ## res[resB6M[,"logFC"]>0 & resNZOM[,"logFC"]>0 & resB6F[,"logFC"]>0 & resNZOF[,"logFC"]>0,"logFC"]= 1
+
+    ## res[,"FDR"]=1
+    ## res[resB6M[,"FDR"]< p.cutoff & resNZOM[,"FDR"]<p.cutoff & resB6F[,"FDR"]< p.cutoff & resNZOF[,"FDR"]<p.cutoff & res[,"logFC"]!=0 ,"FDR"]= p.cutoff/2
+
+
+    return(res)    
+    
+  }
+
+
+    
+
 edgeRfit <- function(y,age,gender,type)
   {
     if(length(unique(gender))==1)

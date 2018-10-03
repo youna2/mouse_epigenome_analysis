@@ -1,5 +1,5 @@
 
-p.cutoff=0.01
+p.cutoff=0.05
 
 p.mat.strain=NULL ##bed[,"p.value"]
 fc.mat.strain= NULL  ##-bed[,"Fold"]
@@ -10,6 +10,10 @@ if(tid>=5)
     if(tid==6) int.or.slope="opposite"
     if(tid==7) int.or.slope="NZO.signif"
     if(tid==8) int.or.slope="B6.signif"
+    if(tid==9) int.or.slope="withinB6"
+    if(tid==10) int.or.slope="withinNZO"
+    if(tid==11) int.or.slope="all"
+      
   }else{
     commonpattern=FALSE
     if(tid==3)
@@ -25,6 +29,7 @@ if(tid>=5)
 
 selectsample= (AGE != 26.75)
 y0=Y[,selectsample]
+y0forheatmap=bed[,-(1:4)][,selectsample]
 age0=AGE[selectsample]
 gender0=GENDER[selectsample]
 tissue0=TISSUE[selectsample]
@@ -41,7 +46,7 @@ if(commonpattern)
   {
     pdf(paste(int.or.slope,"pattern.pdf",sep="_"))
     topgene=paste("B6_NZO",int.or.slope,sep="_")
-    if(tid==5)
+    if(tid==5 | tid>=9)
       {
     positivepeak="opening"
     negativepeak="closing"
@@ -104,7 +109,7 @@ for(i in 1:length(utissue))
     atac.glmtop=atac.glmtop.strain
     p.mat.strain=cbind(p.mat.strain,atac.glmtop[,"PValue"])
     fc.mat.strain=cbind(fc.mat.strain,atac.glmtop[,"logFC"])
-    heatmapmat=y0[atac.glmtop[,"FDR"]<p.cutoff,tissue0==utissue[i]]$counts
+    heatmapmat=y0forheatmap[atac.glmtop[,"FDR"]<p.cutoff,tissue0==utissue[i]]
 
     
     annot.row=annot=atac.glmtop[atac.glmtop[,"FDR"]<p.cutoff,"logFC"]
@@ -174,7 +179,7 @@ twoway.barplot.arg3=c(twoway.barplot.arg3,c("+","-"))
 }
 
 ylimmax=max(abs(twoway.barplot.arg2))
-YLIM=c(-ylimmax,ylimmax)
+ylimmax=40000;YLIM=c(-ylimmax,ylimmax)
 
 q1=twoway.barplot(twoway.barplot.arg1,twoway.barplot.arg2,twoway.barplot.arg3,(-10):10*1000,(-10):10*1000,"Tissue","no. differential peaks/genes",paste("B6 vs NZO",int.or.slope),YLIM)
 
@@ -294,7 +299,10 @@ for(N in 2:3)
         if(nrow(diff.gene)>1)
           {
         genesV2 = getLDS(attributes = c("entrezgene"), filters = "entrezgene", values = diff.gene[,1] , mart = mouse, attributesL = c("hgnc_symbol"), martL = human, uniqueRows=T)
-        
+        }
+        if(nrow(genesV2)>1)
+          {
+
         genesV2[,2]=toupper(genesV2[, 2])
         
         gene.and.CA=diff.gene[match(genesV2[,1],diff.gene[,1]),]
@@ -311,11 +319,11 @@ for(N in 2:3)
             
             write.table(human.diff.gene,file=paste("temp",tid,".txt",sep=""),quote=F,row.names=F,col.names=F)
 
+            system(paste("findGO.pl temp",tid,".txt human temp",tid,sep=""))
+            wiki=as.matrix(read.delim(paste("temp",tid,"/wikipathways.txt",sep="")))
 
-        
-        system(paste("findGO.pl temp",tid,".txt human temp",tid,sep=""))
-        wiki=as.matrix(read.delim("temp/wikipathways.txt"))
-        wiki=rbind(wiki[as.numeric(wiki[,3])< 10^(-4) ,c(2,3)])
+
+            wiki=rbind(wiki[as.numeric(wiki[,3])< 10^(-4) ,c(2,3)])
        # wiki=wiki[match(unique(wiki[,1]),wiki[,1]),]
         if(nrow(wiki)>0) enrichpath.wiki[[N]][[k]]=wiki
 

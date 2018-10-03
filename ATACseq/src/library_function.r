@@ -271,6 +271,25 @@ edgeRfitcommon <- function(y,age,gender,type)
     res[resNZO[,"FDR"]>= p.cutoff & resB6[,"FDR"]<p.cutoff & res[,"logFC"]!=0 ,"FDR"]= p.cutoff/2
   }
 
+
+
+
+###
+    if(tid==9)
+      {
+        sel= (type=="B6")
+        resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+        res=resB6
+      }
+    if(tid==10)
+      {
+        sel= (type=="NZO")
+        resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+        res=resNZO
+      }
+    if(tid==11)
+      res=edgeRfit(y,age,gender,type)
+    
     ## sel= (type=="B6" & gender =="M")
     ## resB6M=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
     ## sel= (type=="NZO" & gender=="M")

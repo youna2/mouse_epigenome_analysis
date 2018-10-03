@@ -8,6 +8,8 @@ fc.mat= NULL  ##-bed[,"Fold"]
 
 if(selB6) selectsample= (TYPE=="B6" & AGE != 26.75) else selectsample= (TYPE=="NZO" & AGE != 26.75)
 y0=Y[,selectsample]
+y0forheatmap=bed[,-(1:4)][,selectsample]
+
 age0=AGE[selectsample]
 gender0=GENDER[selectsample]
 tissue0=TISSUE[selectsample]
@@ -90,7 +92,9 @@ for(i in 1:length(utissue))
 
     if(sum(atac.glmtop[,"FDR"]<p.cutoff)>2)
       {
-        heatmapmat=y0[atac.glmtop[,"FDR"]<p.cutoff,tissue0==utissue[i] & gender0==sex]$counts
+
+        heatmapmat=y0forheatmap[atac.glmtop[,"FDR"]<p.cutoff,tissue0==utissue[i]& gender0==sex]
+
         annot.row=annot=atac.glmtop[atac.glmtop[,"FDR"]<p.cutoff,"logFC"]
         annot[annot.row>0]="opening"
         annot[annot.row<0]="closing"
@@ -142,7 +146,7 @@ twoway.barplot.argM2=c(twoway.barplot.argM2,c(m.increasing,-m.decreasing))
 twoway.barplot.argM3=c(twoway.barplot.argM3,c("+","-"))
 
 ylimmax=max(abs(c(twoway.barplot.argM2,twoway.barplot.argF2)))
-YLIM=c(-ylimmax,ylimmax)
+ylimmax=40000;YLIM=c(-ylimmax,ylimmax)
 
 q1=twoway.barplot(twoway.barplot.argF1,twoway.barplot.argF2,twoway.barplot.argF3,(-10):10*1000,(-10):10*1000,"Tissue","no. differential peaks/genes",paste(type0[1]," F",sep=""),YLIM)
 
@@ -244,7 +248,10 @@ for(k in 1:length(tissue.gender.type))
         if(nrow(diff.gene)>1)
           {
         genesV2 = getLDS(attributes = c("entrezgene"), filters = "entrezgene", values = diff.gene[,1] , mart = mouse, attributesL = c("hgnc_symbol"), martL = human, uniqueRows=T)
-        
+      }
+        if(nrow(genesV2)>1)
+          {
+
         genesV2[,2]=toupper(genesV2[, 2])
         
         gene.and.CA=diff.gene[match(genesV2[,1],diff.gene[,1]),]

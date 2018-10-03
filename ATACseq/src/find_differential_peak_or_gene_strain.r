@@ -327,7 +327,7 @@ for(N in 2:3)
        # wiki=wiki[match(unique(wiki[,1]),wiki[,1]),]
         if(nrow(wiki)>0) enrichpath.wiki[[N]][[k]]=wiki
 
-        wiki=as.matrix(read.delim("temp/kegg.txt"))
+        wiki=as.matrix(read.delim(paste("temp",tid,"/kegg.txt",sep="")))
         wiki=rbind(wiki[as.numeric(wiki[,3])< 10^(-4) ,c(2,3)])
         if(nrow(wiki)>0)
           {

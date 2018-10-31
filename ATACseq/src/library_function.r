@@ -1,5 +1,13 @@
 
 
+get_density <- function(x, y, n = 100) {
+  dens <- MASS::kde2d(x = x, y = y, n = n)
+  ix <- findInterval(x, dens$x)
+  iy <- findInterval(y, dens$y)
+  ii <- cbind(ix, iy)
+  return(dens$z[ii])
+}
+
 
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   library(grid)
@@ -48,7 +56,7 @@ twoway.barplot <- function(x,y,z,labels,breaks,xlab,ylab,title,YLIM)
           geom_hline(color="firebrick4",size=0.25,linetype=2,yintercept = 0) +
             scale_fill_manual(values = c("-"="dodgerblue","+"="firebrick1"),guide=guide_legend(title = NULL)) +
               coord_flip() +
-#                scale_y_continuous(labels = labels,breaks = breaks) +
+#                scale_y_continuous(labels = c(4,2,0,2,4)*10000,breaks = c(-4,-2,0,2,4)*10000) +
                   labs(x=xlab, y=ylab) +
                     theme_minimal(base_size = 8) +
                       theme(axis.text.y = element_text(size=8),aspect.ratio = 1,panel.grid.major.y = element_line(color="honeydew2"))+ggtitle(title)+ylim(YLIM)
@@ -158,15 +166,15 @@ df=NULL
       {
         temptissue=colnames(p.mat)[i]
         print(temptissue)
-        print(sum(p.adjust(p.mat[,i],"fdr")<0.05))
-        sel=which(p.adjust(p.mat[,i],"fdr")<0.05)
+        print(sum(p.mat[,i]<0.05))
+        sel=which(p.mat[,i]<0.05)
         write.table(cbind(annotation[ sel,"Entrez.ID"],p.mat[sel,i],fc.mat[sel,i]),file=paste(topgene,temptissue,".txt",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
 
 
         
-        sel=which(p.adjust(p.mat[,i],"fdr")<0.05 & fc.mat[,i]>0)
+        sel=which(p.mat[,i]<0.05 & fc.mat[,i]>0)
         if(length(sel)>0) df=rbind(df,   cbind( paste(colnames(p.mat)[i],"+"), removing.paren(annotation[sel,"Annotation"])))
-        sel=which(p.adjust(p.mat[,i],"fdr")<0.05 & fc.mat[,i]<0)
+        sel=which(p.mat[,i]<0.05 & fc.mat[,i]<0)
         if(length(sel)>0) df=rbind(df,   cbind(paste(colnames(p.mat)[i],"-"),removing.paren(annotation[sel,"Annotation"])))
 
       }
@@ -375,26 +383,26 @@ global.heatmap <- function(p.mat,fc.mat)
     temp2=min(temp[temp>0])
     p.mat[p.mat==0]=temp2
     x= -log(p.mat)*sign(fc.mat)
-    adj.p.mat=p.mat
-    for(i in 1:ncol(p.mat)) adj.p.mat[,i]=p.adjust(p.mat[,i],"fdr")
-    x=x[rowSums(adj.p.mat<p.cutoff)>0,]
+#    adj.p.mat=p.mat
+#    for(i in 1:ncol(p.mat)) adj.p.mat[,i]=p.adjust(p.mat[,i],"fdr")
+    x=x[rowSums(p.mat<p.cutoff)>0,]
 
     if(nrow(x)>40000) x=x[sample(1:nrow(x),40000),]
     if(max(x)> abs(min(x))) x=rbind(x,-max(abs(x)))  else  x=rbind(x,max(abs(x)))#for color balance
     
     if(tid==1 | tid==2 | tid==5)
       {
-        pheatmap(x,scale="none",cluster_cols = FALSE, color = colorRampPalette(c("red4", "white", "blue4"))(100),show_rownames = F,main="log p* sign of change" )
+        pheatmap(x,scale="none",cluster_cols = FALSE, color = colorRampPalette(c("red4", "white", "blue4"))(100),show_rownames = F,main="log q* sign of change" )
       }
     else
       {
         if(typeinteraction)
           {
-            pheatmap(x,scale="none",cluster_cols = FALSE, color = colorRampPalette(c("red4", "white", "blue4"))(100),show_rownames = F,main="log p* sign of change of slope in NZO" )        
+            pheatmap(x,scale="none",cluster_cols = FALSE, color = colorRampPalette(c("red4", "white", "blue4"))(100),show_rownames = F,main="log q* sign of change of slope in NZO" )        
           }
         else
           {
-            pheatmap(x,scale="none",cluster_cols = FALSE, color = colorRampPalette(c("red4", "white", "blue4"))(100),show_rownames = F,main="log p* sign of change of intercept in NZO" )        
+            pheatmap(x,scale="none",cluster_cols = FALSE, color = colorRampPalette(c("red4", "white", "blue4"))(100),show_rownames = F,main="log q* sign of change of intercept in NZO" )        
           }
       }
     

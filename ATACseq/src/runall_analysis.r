@@ -18,9 +18,9 @@ color.var=cbind(TISSUE,STRAIN,AGE,GENDER)
 res=PVCA(bed[,-(1:4)],color.var,0.8)
 PlotPVCA(res, "")
 
-bed[,-(1:4)]= cpm(Y, normalized.lib.sizes=TRUE)
+bed= cpm(Y, normalized.lib.sizes=TRUE)
 
-PCA(bed[,-(1:4)],color.var)
+PCA(bed,color.var)
 dev.off()
 
 
@@ -31,14 +31,5 @@ dev.off()
 ## tid = 4 : In each tissue type, for each peak, fit y~ c0+ age*c1 for B6 and fit y~ c2 + age*c3 for NZO and test if c1 is different from c3 and identify peaks where c1 and c3 are significantly different.
 ## tid = 5 : In each tissue type, for each peak, fit y~ c0+ c_strain+ c_gender+ age*c1 and find peaks with significant p-values for the coefficient c1. This is to find common aging pattern across gender and strain. 
 
-
-
-tid=1
-
-if(tid==1) selB6=TRUE
-if(tid==2) selB6=FALSE
-
-YLIM=c(-30000,30000)
-if(tid>2) source("../../ATACseq/src/find_differential_peak_or_gene_strain.r") else source("../../ATACseq/src/find_differential_peak_or_gene.r")
-
-
+YLIMMAX=40000
+source("../../ATACseq/src/runall_analysis_second.r")

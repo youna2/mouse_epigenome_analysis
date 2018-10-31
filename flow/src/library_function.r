@@ -1,3 +1,10 @@
+coef.heatmap <- function(x,title)
+  {
+x=x[c(4:6,53,7:10,54,11:14,55,15:47),]
+
+MAX=max(abs(-sign(x)*log(abs(x))),na.rm=T);breaksList = seq(-MAX, MAX, by = 1)
+pheatmap(-sign(x)*log(abs(x)),cluster_cols = FALSE,cluster_rows = FALSE,scale="none",main=title,color = colorRampPalette(c("blue","white","red"))(length(breaksList)),breaks = breaksList)
+}
 
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {
   library(grid)

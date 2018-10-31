@@ -18,7 +18,7 @@ color.var=cbind(TISSUE,STRAIN,AGE,GENDER)
 res=PVCA(bed,color.var,1)
 PlotPVCA(res, "")
 
-bed[,]= cpm(Y, normalized.lib.sizes=TRUE)
+bed= cpm(Y, normalized.lib.sizes=TRUE)
 PCA(bed,color.var)
 dev.off()
 
@@ -29,12 +29,7 @@ dev.off()
 ## tid = 3 : In each tissue type, for each peak, fit y~ c0+ age*c1 for B6 and fit y~ c2 + age*c3 for NZO and test if c0 is different from c2 and identify genes where c0 and c2 are significantly different.
 ## tid = 4 : In each tissue type, for each peak, fit y~ c0+ age*c1 for B6 and fit y~ c2 + age*c3 for NZO and test if c1 is different from c3 and identify genes where c1 and c3 are significantly different.
 
-tid=1
-
-if(tid==1) selB6=TRUE
-if(tid==2) selB6=FALSE
-
-YLIM=c(-5000,5000)
-if(tid==3 | tid==4) source("../../ATACseq/src/find_differential_peak_or_gene_strain.r") else source("../../ATACseq/src/find_differential_peak_or_gene.r")
+YLIMMAX=4000
+source("../../ATACseq/src/runall_analysis_second.r")
 
 

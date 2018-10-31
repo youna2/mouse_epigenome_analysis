@@ -8,7 +8,7 @@ fc.mat= NULL  ##-bed[,"Fold"]
 
 if(selB6) selectsample= (TYPE=="B6" & AGE != 26.75) else selectsample= (TYPE=="NZO" & AGE != 26.75)
 y0=Y[,selectsample]
-y0forheatmap=bed[,-(1:4)][,selectsample]
+y0forheatmap=bed[,selectsample]
 
 age0=AGE[selectsample]
 gender0=GENDER[selectsample]
@@ -87,7 +87,7 @@ for(i in 1:length(utissue))
         if(sex=="M") atac.glmtop=atac.glmtopM
         if(sex=="F") atac.glmtop=atac.glmtopF
 
-        p.mat=cbind(p.mat,atac.glmtop[,"PValue"])
+        p.mat=cbind(p.mat,atac.glmtop[,"FDR"])
         fc.mat=cbind(fc.mat,atac.glmtop[,"logFC"])
 
     if(sum(atac.glmtop[,"FDR"]<p.cutoff)>2)
@@ -123,7 +123,7 @@ for(i in 1:length(utissue))
 
   }
 colnames(fc.mat)=colnames(p.mat)=paste(rep(utissue,each=2),rep(c("F","M"),length(utissue)))
-save(p.mat,fc.mat,file="pmat_fcmat.Rdata")
+save(p.mat,fc.mat,file=paste("pmat_fcmat_B6_",selB6,".Rdata",sep=""))
 ### heatmap of p-values of peaks/genes across tissues and gender
 global.heatmap(p.mat,fc.mat)
 
@@ -165,7 +165,7 @@ diff.peaks(p.mat,fc.mat,topgene)
 
     for(jj in 1:2)
       {
-        if(jj==1) tt=((p.mat<0.001 & fc.mat>0)) else tt=((p.mat<0.001 & fc.mat<0))
+        if(jj==1) tt=((p.mat<p.cutoff & fc.mat>0)) else tt=((p.mat<p.cutoff & fc.mat<0))
 
         fisher.p=fisher.p0=fisher.stat=matrix(NA,nr=ncol(p.mat),nc=ncol(p.mat))
         rownames(fisher.p)=colnames(fisher.p)=colnames(p.mat)

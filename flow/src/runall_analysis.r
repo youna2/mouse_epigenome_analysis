@@ -275,16 +275,24 @@ if(analyze.spleen)
   write.csv(y,file="../results/difference_of_intercept_PBL.csv",quote=F)
 }
 
+
+
+maineffect.coef=cbind(R1[,"aging_coef"],R2[,"aging_coef"],R3[,"aging_coef"],R4[,"aging_coef"])
+maineffect.p=cbind(R1[,"aging_p"],R2[,"aging_p"],R3[,"aging_p"],R4[,"aging_p"])
+x=sign(maineffect.coef)*maineffect.p
+colnames(x)=c("F in B6","M in B6","F in NZO","M in NZO")
+
+coef.heatmap(x,"Slope with aging")
+
 var=c("dat$age:dat$SexM","tempdat$age:tempdat$SexF" ,"dat$age:dat$typeNZO","tempdat$age:tempdat$typeB6")
+
 x=sign(percent.vs.type.interaction.coef[,var])*percent.vs.type.interaction.p[,var]
 x[,c(2,4)]= -x[,c(2,4)]
 colnames(x)=c("M-F in B6","M-F in NZO","NZO-B6 in F","NZO-B6 in M")
 rownames(x)=rownames(R1)
 #if(!analyze.spleen) x[cd38var,-1]=1
-x=x[c(4:6,53,7:10,54,11:14,55,15:47),]
 
-MAX=max(abs(-sign(x)*log(abs(x))),na.rm=T);breaksList = seq(-MAX, MAX, by = 1)
-pheatmap(-sign(x)*log(abs(x)),cluster_cols = FALSE,cluster_rows = FALSE,scale="none",main="Difference of slopes",color = colorRampPalette(c("blue","white","red"))(length(breaksList)),breaks = breaksList)
+coef.heatmap(x,"Difference of slopes")
 y=sign(x)*pvalue.convert(abs(x))
 y[y==0]=""
 

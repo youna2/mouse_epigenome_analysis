@@ -15,7 +15,7 @@ for(tid in 3:10)
   {
     source("../../ATACseq/src/matching_ATAC_RNA.r")
 
-    source("../../ATACseq/src/generate_pmat_fcmat.r")
+#    source("../../ATACseq/src/generate_pmat_fcmat.r")
     
     source("../../ATACseq/src/find_differential_peak_or_gene_strain.r")
   }

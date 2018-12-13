@@ -13,41 +13,37 @@ for(selB6 in c(TRUE,FALSE))
   {
     corvec=rep(NA,5)
     total.FC.graph=vector("list",5)    
-    for(i in 1:5)
-      {
 
-
-        load("../../RNAseq/data/RNAseqData.Rdata")
+        load("../../RNAseq/results/RNAseqData2.Rdata")
 
 
         if(selB6) load("../../RNAseq/results/pmat_fcmat_within B6.Rdata") else load("../../RNAseq/results/pmat_fcmat_within NZO.Rdata")
         p.mat=p.mat.strain
         fc.mat=fc.mat.strain
-        removeNOFC=T
-        if(removeNOFC)
-          {
-            sel=(abs(fc.mat[,i])>0.0001)
-            annotation=cbind(annotation[sel,])
-            colnames(annotation)="Entrez.ID"
-            fc.mat=fc.mat[sel,]
-            p.mat=p.mat[sel,]
-          }
+        ## removeNOFC=F
+        ## if(removeNOFC)
+        ##   {
+        ##     sel=(abs(fc.mat[,i])>0.0001)
+        ##     annotation=cbind(annotation[sel,])
+        ##     colnames(annotation)="Entrez.ID"
+        ##     fc.mat=fc.mat[sel,]
+        ##     p.mat=p.mat[sel,]
+        ##   }
 
 
         EntrezRNA=annotation[,"Entrez.ID"]
         annotationRNA=annotation
         p.mat.RNA=p.mat
         fc.mat.RNA=fc.mat
-        load("../../ATACseq/data/ATACseqData.Rdata")
+
+    load("../../ATACseq/results/ATACseqData2.Rdata")
+
+    if(selB6) load("../../ATACseq/results/pmat_fcmat_within B6.Rdata") else load("../../ATACseq/results/pmat_fcmat_within NZO.Rdata")
+    p.mat=p.mat.strain
+    fc.mat=fc.mat.strain
 
 
-
-        if(selB6) load("../../ATACseq/results/pmat_fcmat_within B6.Rdata") else load("../../ATACseq/results/pmat_fcmat_within NZO.Rdata")
-        p.mat=p.mat.strain
-        fc.mat=fc.mat.strain
-
-
-        onlypromoter=T
+        onlypromoter=F ### this doesn't make much difference
         if(onlypromoter)
           {
             sel=(removing.paren(annotation[,"Annotation"])=="promoter-TSS ")
@@ -77,29 +73,51 @@ for(selB6 in c(TRUE,FALSE))
         mean(EntrezATAC[matching.index[,1]]==EntrezRNA[matching.index[,2]])
                                         #save(matching.index,file="../../ATACseq/results/matching_index.Rdata")
 
-
-        df=data.frame(ATAC=fc.mat.ATAC[matching.index[,1],i],RNA=fc.mat.RNA[matching.index[,2],i])
-        df$density <- get_density(df$ATAC,df$RNA)
-
-        temp=cor.test(fc.mat.ATAC[matching.index[,1],i],fc.mat.RNA[matching.index[,2],i])
-        total.FC.graph[[i]] <- ggplot(df,aes(ATAC, RNA))+ geom_point( aes(ATAC, RNA,color=density),size=1/10) + scale_color_viridis() +xlab(paste("log FC in ATAC"))+ylab(paste("log FC in RNA"))+ggtitle(strsplit(colnames(fc.mat.ATAC)[i]," ")[[1]][1])+annotate("text", label = paste("r=",signif(temp$estimate,2)), x = 0, y = max(df$RNA,na.rm=T), size = textsize, colour = "red")+ theme(legend.position="none") + stat_smooth(method="lm",col="grey", se=FALSE)
                                         #geom_abline(color="grey",slope=1,intercept=0)
+
+
+        ATAC.FC= -sign(fc.mat.ATAC[matching.index[,1],])*log(p.mat.ATAC[matching.index[,1],])
+        RNA.FC= -sign(fc.mat.RNA[matching.index[,2],])*log(p.mat.RNA[matching.index[,2],])
+
+        mouseentrez=common
+
+
+    for(i in 1:5)
+      {
+        x=fc.mat.ATAC[matching.index[,1],i]
+        y=fc.mat.RNA[matching.index[,2],i]
+
+        x.p=p.mat.ATAC[matching.index[,1],i]
+        y.p=p.mat.RNA[matching.index[,2],i]
+
+#        x=x[x.p<0.1]
+#        y=y[x.p<0.1]
         
-        corvec[i]=temp$estimate
+        title=strsplit(colnames(fc.mat.ATAC)[i]," ")[[1]][1]
+        xlab="log FC in ATAC"
+        if(i==1)
+          {
+           if(selB6) ylab="B6\nlog FC in RNA" else ylab="NZO\nlog FC in RNA"
+          }else{
+            ylab="log FC in RNA"
+          }
+        total.FC.graph[[i]] <- plot.correlationplot(x,y,title,xlab,ylab)
+        
+#        corvec[i]=temp$estimate
       }
     if(selB6)
       {
-        total.FC.graph.ATC=total.FC.graph
-        save(corvec,file="../../ATACseq/results/cor_ATAC_RNA_B6.Rdata")
+        total.FC.graph.B6=total.FC.graph
+        save(ATAC.FC,RNA.FC,mouseentrez,file="../../ATACseq/results/FC_ATAC_RNA_B6.Rdata")
       }else{
-        total.FC.graph.RNA=total.FC.graph
-        save(corvec,file="../../ATACseq/results/cor_ATAC_RNA_NZO.Rdata")
+        total.FC.graph.NZO=total.FC.graph
+        save(ATAC.FC,RNA.FC,mouseentrez,file="../../ATACseq/results/FC_ATAC_RNA_NZO.Rdata")
       }
   }
 draw.heatmap=T
 if(draw.heatmap)
   {
     pdf(file="total_FC_ATAC_RNA_graph.pdf",width=20)
-    multiplot(total.FC.graph.ATC[[1]],total.FC.graph.RNA[[1]],total.FC.graph.ATC[[2]],total.FC.graph.RNA[[2]],total.FC.graph.ATC[[3]],total.FC.graph.RNA[[3]],total.FC.graph.ATC[[4]],total.FC.graph.RNA[[4]],total.FC.graph.ATC[[5]],total.FC.graph.RNA[[5]],cols=5)
+    multiplot(total.FC.graph.B6[[1]],total.FC.graph.NZO[[1]],total.FC.graph.B6[[2]],total.FC.graph.NZO[[2]],total.FC.graph.B6[[3]],total.FC.graph.NZO[[3]],total.FC.graph.B6[[4]],total.FC.graph.NZO[[4]],total.FC.graph.B6[[5]],total.FC.graph.NZO[[5]],cols=5)
     dev.off()
   }

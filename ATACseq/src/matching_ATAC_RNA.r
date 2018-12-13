@@ -1,7 +1,7 @@
 library(edgeR)
 setwd("../results")
 previous.dir=getwd()
-utissue=c( "spleen", "BM", "memory","naive", "PBL")         
+utissue=c( "spleen", "BM", "CD8.memory","CD8.naive", "PBL")         
 
 p.cutoff=0.05
 
@@ -53,7 +53,7 @@ if(tid>=5)
 
 ###############################
 
-load("../../RNAseq/data/RNAseqData.Rdata")
+load("../../RNAseq/results/RNAseqData2.Rdata")
 
 load(paste("../../RNAseq/results/pmat_fcmat_",int.or.slope,".Rdata",sep=""))
 
@@ -64,11 +64,11 @@ EntrezRNA=annotation[,"Entrez.ID"]
 annotationRNA=annotation
 
 
-load("../../ATACseq/data/ATACseqData.Rdata")
+load("../../ATACseq/results/ATACseqData2.Rdata")
 
-y <- DGEList(counts=bed[,-(1:4)])
-Y <- calcNormFactors(y,method="TMM")
-bed <- cpm(Y, normalized.lib.sizes=TRUE)
+## y <- DGEList(counts=bed[,-(1:4)])
+## Y <- calcNormFactors(y,method="TMM")
+## bed <- cpm(Y, normalized.lib.sizes=TRUE)
 
 load(paste("../../ATACseq/results/pmat_fcmat_",int.or.slope,".Rdata",sep="")) 
 
@@ -123,19 +123,8 @@ sum(p.mat.strain<p.cutoff)
 convert.to.human.gene.name=F
 if(convert.to.human.gene.name)
   {
-library("biomaRt")
-load("../../ATACseq/data/biomaRt_human_mouse.Rdata")
-load("../../ATACseq/data/mousehumangene_annotation.Rdata")
 
-mouse.entrez=annotation[ ,"Entrez.ID"]
-
-genesV2 = getLDS(attributes = c("entrezgene"), filters = "entrezgene", values =as.numeric(mouse.entrez) , mart = mouse, attributesL = c("hgnc_symbol"), martL = human, uniqueRows=T)
-
-genesV2[,2]=toupper(genesV2[, 2])
-gene.and.CA=genesV2[match(as.numeric(mouse.entrez),genesV2[,1]),]
-
-mean(gene.and.CA[,1]==as.numeric(mouse.entrez),na.rm=T)
-row.bed=gene.and.CA[,2]
+row.bed=convert.mouse.entrez.to.human.symbol(annotation[ ,"Entrez.ID"])
 
 bed=bed[!is.na(row.bed),]
 genename=row.bed[!is.na(row.bed)]

@@ -3,11 +3,9 @@ library(MASS)
 library(viridis)
 theme_set(theme_bw(base_size = 16))
 #### generating plot of FC in B6 vs FC in NZO #####
-library("biomaRt")
-source("../../ATACseq/src/library_function.r")
-load("../../ATACseq/data/biomaRt_human_mouse.Rdata")
 
-load("../../ATACseq/data/mousehumangene_annotation.Rdata")
+source("../../ATACseq/src/library_function.r")
+
 
 immunemodule=TRUE
 celltype.annotation=FALSE
@@ -30,22 +28,14 @@ if(celltype.annotation)
 
 for(RNA in c(TRUE,FALSE))
   {
-    if(RNA) load("../../RNAseq/data/RNAseqData.Rdata") else load("../../ATACseq/data/ATACseqData.Rdata")
+    if(RNA) load("../../RNAseq/results/RNAseqData2.Rdata") else load("../../ATACseq/results/ATACseqData2.Rdata")
 
     dim(annotation)
-    genesV2 = getLDS(attributes = c("entrezgene"), filters = "entrezgene", values =as.numeric(annotation[ ,"Entrez.ID"]) , mart = mouse, attributesL = c("hgnc_symbol"), martL = human, uniqueRows=T)
-
-    dim(genesV2)
-    genesV2[,2]=toupper(genesV2[, 2])
-    gene.and.CA=genesV2[match(as.numeric(annotation[,"Entrez.ID"]),genesV2[,1]),]
-
-
-    dim(gene.and.CA)
-    mean(gene.and.CA[,1]==as.numeric(annotation[,"Entrez.ID"]),na.rm=T)
+    
     pathid=unique(all.gene[,1])
     pathway=matrix(NA,nr=nrow(annotation),nc=2+length(pathid))
     pathway[,1]=annotation[,"Entrez.ID"]
-    pathway[,2]=gene.and.CA[,2]
+    pathway[,2]=convert.mouse.entrez.to.human.symbol(annotation[,"Entrez.ID"])
 
 
 

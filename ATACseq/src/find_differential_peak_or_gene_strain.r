@@ -179,84 +179,8 @@ for(pathwaytype in 1:2)
 
                     human.diff.gene <- unique(genesV2[, 2]) ### human ortholog of the differential gene
                     write.table(human.diff.gene,file=paste(topgene,temptissue,directionselsymbol,"human.txt",sep=""),quote=F,row.names=F,col.names=F)
-
-                    if(pathwaytype==2)
-                      {
-                        setwd("~/homer")
-                        
-                        write.table(human.diff.gene,file=paste("temp",tid,".txt",sep=""),quote=F,row.names=F,col.names=F)
-
-                        system(paste("findGO.pl temp",tid,".txt human temp",tid,sep=""))
-                        wiki=as.matrix(read.delim(paste("temp",tid,"/wikipathways.txt",sep="")))
-
-                        wiki=rbind(wiki[p.adjust(as.numeric(wiki[,3]),"fdr")< 0.01,c(2,3)])
-                                        # wiki=wiki[match(unique(wiki[,1]),wiki[,1]),]
-                        if(nrow(wiki)>0) enrichpath.wiki[[N]][[k]]=wiki
-
-                        wiki=as.matrix(read.delim(paste("temp",tid,"/kegg.txt",sep="")))
-                        wiki=wiki[match(unique(wiki[,1]),wiki[,1]),]
-                        
-                        wiki=rbind(wiki[p.adjust(as.numeric(wiki[,3]),"fdr")< 0.01,c(2,3)])
-                        if(nrow(wiki)>0) enrichpath.kegg[[N]][[k]]=wiki
-                          
-                        setwd(previous.dir)
-                      }
-                    allpath=NULL
-
-                    mean(human.diff.gene %in% gene.universe)
-
-                    if(immunemodule)
-                      {
-                        version="2008"#"2015"
-                        all.gene=as.matrix(read.table(paste("../../ATACseq/data/immunemodule/VP",version,"_Modules_genes.txt",sep=""),header=T))
-                        path.annotation=as.matrix(read.csv(paste("../../ATACseq/data/immunemodule/VP",version,"_Modules_annotations.csv",sep="")))
-                      }
-                    if(celltype.annotation)
-                      {
-                        load("../../ATACseq/data/pbmc_specific_genes.annotations_April.2018.EJM_10x.RData")
-                        all.gene=  geneset.genes.scrnaseq_pbmc_specific
-                        path.annotation= geneset.names.scrnaseq_pbmc_specific[,c(2,1)]
-                      }
-                    pathid=unique(all.gene[,1])
-                    pathp=rep(NA,length(pathid))
-                    for(i in 1:length(pathid))
-                      {
-                        path.gene=toupper(all.gene[all.gene[,1]==pathid[i],2])### all genes in pathway i
-
-                        total=length(unique(gene.universe))  ### all human ortholog genes 
-                        white=length(unique(intersect(path.gene,gene.universe))) ### all genes in pathway i in universe
-                        black=total-white
-                        pick=length(human.diff.gene)
-
-                        intersection=intersect(human.diff.gene,path.gene)
-                        
-                        lintersection= length(intersection )
-
-                        whitepick=lintersection-1
-
-                        pathp[i]= 1-phyper(whitepick,white,black,pick)
-
-                        temp=match(intersection,genesV2[,2])
-                        
-                                        #                if(pathp[i]<0.01)
-                                        #                  {
-                                        #                    print(paste("all pathways including unnamed with p<0.01 for",temptissue))
-                                        #                    print(path.annotation[ match(pathid[i],path.annotation[,1]), 2])
-                                        #                    print( cbind(genesV2[temp,2],gene.and.CA[match(genesV2[  temp  ,1],gene.and.CA[,1]),3]))
-                                        #                  }
-                      }
-
-                    allpath=rbind(allpath,cbind(path.annotation[ match(pathid,path.annotation[,1]), 2],pathp))
-                    
-
-                    pick=rep(NA,nrow(allpath))
-                    for(i in 1:length(pick))
-                      pick[i]=pick_null_pathway(allpath[i,1])
-                    allpath=allpath[!pick,]
-                    print(paste("all pathways that are named with fdr<0.05 for",temptissue))
-                    enrichpath[[N]][[k]]=rbind(allpath[p.adjust(as.numeric(allpath[,2]),"fdr")<0.05 & allpath[,1]!="Unknown",])
-
-                    print(enrichpath[[N]][[k]])
+#######
+                    source("../../ATACseq/src/pathway_enrichment_test.r")
                   }
               }
           }

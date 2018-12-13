@@ -1,5 +1,160 @@
+library(ggplot2)
+library(MASS)
+library(viridis)
+library(gtable)
+library(gridExtra)
+plot.correlationplot <- function(x,y,title,xlab,ylab)
+  { 
+    df=data.frame(ATAC=x,RNA=y)
+    df$density <- get_density(df$ATAC,df$RNA)
+    if(RNA) margin=10^(-3) else margin=0
+    
+    temp=cor.test(x,y)
+    y <- ggplot(df,aes(ATAC, RNA))+ geom_point( aes(ATAC, RNA,color=density),size=1/10) + scale_color_viridis() +xlab(xlab)+ylab(ylab)+ggtitle(title)+annotate("text", label = paste("r=",signif(temp$estimate,2),sep=""), x = 0, y = quantile(y,1-margin), size = textsize, colour = "red")+ theme(legend.position="none") + stat_smooth(method="lm",col="grey", se=FALSE)+xlim(quantile(x,margin),quantile(x,1-margin))+ylim(quantile(y,margin),quantile(y,1-margin))
+
+    return(y)
+  }
 
 
+plot.balloonplot.mouse <- function(balloonplot)
+  {
+
+    for(i in 1:3)
+      {
+        multiballoonplot=vector("list",4)
+    
+        for(j in 1:3)
+          {
+            pathwaymat=balloonplot[[i]]
+
+            if(i==3)
+              {
+                pathwaymat=pathwaymat[as.numeric(pathwaymat[,2])<10^(-5),]
+                pathwaymat=pathwaymat[pathwaymat[,4]=="CD8.memory" | pathwaymat[,4]=="CD8.naive" ,]
+              }
+        
+            if(i!=3) pathwaymat=pathwaymat[pathwaymat[,4]!="CD8.memory" &pathwaymat[,4]!="CD8.naive" ,]
+            
+            if(j ==1) sel=pathwaymat[,5]=="within NZO" | pathwaymat[,5]=="within B6"
+
+            if(j ==2) sel=pathwaymat[,5]=="B6 vs NZO common" | pathwaymat[,5]=="B6 vs NZO opposite"
+            if(j ==3) sel=pathwaymat[,5]=="only NZO significant" | pathwaymat[,5]=="only B6 significant"
+
+            if(j ==4) sel=pathwaymat[,5]=="intercept" | pathwaymat[,5]=="slope"        
+
+            pathwaymat=pathwaymat[sel,]
+    
+            df=data.frame(pathid=pathwaymat[,1],logp=-log10(as.numeric(pathwaymat[,2])+10^(-30)),direction=(pathwaymat[,3]),tissue=pathwaymat[,4],class=pathwaymat[,5])
+
+            multiballoonplot[[j]]=(ggballoonplot(df, x = "tissue", y = "pathid", size = "logp", fill = "direction" ,facet.by="class",ggtheme = theme_bw()))+scale_fill_manual(values = c("down"="dodgerblue","up"="firebrick1"),guide=guide_legend(title = NULL))# +facet_wrap("class",scales="free_x") #+
+#  scale_fill_viridis_c(option = "C")
+          }
+
+#        if(i<3)
+#          {
+            multiplot(multiballoonplot[[1]],multiballoonplot[[2]],multiballoonplot[[3]],multiballoonplot[[4]],col=1)
+      ##     }else{
+      ##       multiplot(multiballoonplot[[1]],multiballoonplot[[2]],col=1);
+      ##       print(multiballoonplot[[4]]);
+
+      ## }
+  }
+
+}
+
+plot.balloonplot.human <- function(balloonplot)
+  {
+    multiballoonplot=vector("list",3)
+    for(i in 1:3)
+      {    
+        pathwaymat=balloonplot[[i]]
+        
+        pathwaymat=pathwaymat[pathwaymat[,4]=="PBL" | pathwaymat[,5]=="human",]
+
+        if(i==3)
+          {
+            pathwaymat=pathwaymat[as.numeric(pathwaymat[,2])<10^(-3),]
+          }
+                    
+        sel=pathwaymat[,5]=="within NZO" | pathwaymat[,5]=="within B6"| pathwaymat[,5]=="human"
+
+
+        pathwaymat=pathwaymat[sel,]
+    
+        df=data.frame(pathid=pathwaymat[,1],logp=-log10(as.numeric(pathwaymat[,2])+10^(-30)),direction=(pathwaymat[,3]),tissue=pathwaymat[,4],class=pathwaymat[,5])
+
+        multiballoonplot[[i]]=(ggballoonplot(df, x = "tissue", y = "pathid", size = "logp", fill = "direction",facet.by="class" ,ggtheme = theme_bw()))+scale_fill_manual(values = c("down"="dodgerblue","up"="firebrick1"),guide=guide_legend(title = NULL))# +facet_wrap("class",scales="free_x") #+
+#  scale_fill_viridis_c(option = "C")
+      }
+
+    p1=multiballoonplot[[1]]
+    p2=multiballoonplot[[2]]
+    p3=multiballoonplot[[3]]
+    grid.arrange(p1,p2,p3,nrow=3)
+
+}
+
+module.enrichment.test <- function(human.diff.gene,all.gene,gene.universe)
+  {
+print(c("geneuniverse",mean(toupper(human.diff.gene) %in% gene.universe)))
+    human.diff.gene=intersect(toupper(human.diff.gene),gene.universe)
+                    pathid=unique(all.gene[,1])
+                    pathp=rep(NA,length(pathid))
+                    for(i in 1:length(pathid))
+                      {
+                        path.gene=toupper(all.gene[all.gene[,1]==pathid[i],2])### all genes in pathway i
+
+                        total=length(unique(gene.universe))  ### all human ortholog genes 
+                        white=length(unique(intersect(path.gene,gene.universe))) ### all genes in pathway i in universe
+                        black=total-white
+                        pick=length(human.diff.gene)
+
+                        intersection=intersect(human.diff.gene,path.gene)
+                        
+                        lintersection= length(intersection )
+
+                        whitepick=lintersection-1
+
+                        pathp[i]= 1-phyper(whitepick,white,black,pick)
+
+#                        temp=match(intersection,genesV2[,2])
+                        
+                      }
+
+                    return(list(pathid,pathp))
+  }
+
+
+## convert.mouse.entrez.to.human.symbol <- function(x)
+##   {
+##     library("biomaRt")
+##     load("../../ATACseq/data/biomaRt_human_mouse.Rdata")
+##     load("../../ATACseq/data/mousehumangene_annotation.Rdata")
+
+##     genesV2 = getLDS(attributes = c("entrezgene"), filters = "entrezgene", values =as.numeric(x) , mart = mouse, attributesL = c("hgnc_symbol"), martL = human, uniqueRows=T)
+
+##     genesV2[,2]=toupper(genesV2[, 2])
+##     gene.and.CA=genesV2[match(as.numeric(x),genesV2[,1]),]
+
+##     print(mean(gene.and.CA[,1]==as.numeric(x),na.rm=T))
+##     return(gene.and.CA[,2])
+##   }
+###
+
+convert.mouse.entrez.to.human.symbol <- function(x)
+  {
+    genesV2=read.csv("../../ATACseq/data/Human.Mouse.Rat.Ortholog.Gene.List.csv",header=T)
+    genesV2=genesV2[,c("Mouse_Entrez","Human_Symbol")]
+    
+    genesV2[,2]=toupper(genesV2[, 2])
+    gene.and.CA=genesV2[match(as.numeric(x),genesV2[,1]),]
+
+    print(mean(gene.and.CA[,1]==as.numeric(x),na.rm=T))
+    return(gene.and.CA[,2])
+  }
+
+
+###
 get_density <- function(x, y, n = 100) {
   dens <- MASS::kde2d(x = x, y = y, n = n)
   ix <- findInterval(x, dens$x)

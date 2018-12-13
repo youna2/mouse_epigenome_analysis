@@ -1,5 +1,5 @@
 
-p.cutoff=0.05
+p.cutoff=0.1
 
 p.mat.strain=NULL ##bed[,"p.value"]
 fc.mat.strain= NULL  ##-bed[,"Fold"]
@@ -40,7 +40,7 @@ samplemouseid0=SAMPLEMOUSEID[selectsample]
 
 setwd("../results")
 previous.dir=getwd()
-utissue=c( "spleen", "BM", "memory","naive", "PBL")         
+utissue=c( "spleen", "BM", "CD8.memory","CD8.naive", "PBL")         
 
 if(commonpattern)
   {
@@ -154,3 +154,10 @@ for(i in 1:length(utissue))
 save(p.mat.strain,fc.mat.strain,file=paste("pmat_fcmat_",int.or.slope,".Rdata",sep=""))
 
 dev.off()
+if(sum(strsplit(getwd(),"/")[[1]]=="ATACseq")==1 )
+  {
+       bed=bed[selectgene,]
+       Y=Y[selectgene,]
+       annotation=annotation[selectgene,]
+       save(bed,Y,annotation,AGE,GENDER,TISSUE,STRAIN,TYPE,SAMPLEMOUSEID,file=filename)
+     }

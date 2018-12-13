@@ -23,6 +23,7 @@ bed= cpm(Y, normalized.lib.sizes=TRUE)
 PCA(bed,color.var)
 dev.off()
 
+source("../../ATACseq/src/remove_problemsample.r")
 
 ## Do timeseries analysis separately for each tissue type and gender and find peaks that are increasing/decreasing with age and do pathway enrichment analysis for the identified genes. There are four options :
 ## tid = 1 : do time series analysis in B6 strain. In each tissue type and gender, fit y~ c0+ age*c1  where y is chromatin accessibility of a peak and find peaks with significant p-values for the coefficient c1. 
@@ -31,5 +32,5 @@ dev.off()
 ## tid = 4 : In each tissue type, for each peak, fit y~ c0+ age*c1 for B6 and fit y~ c2 + age*c3 for NZO and test if c1 is different from c3 and identify peaks where c1 and c3 are significantly different.
 ## tid = 5 : In each tissue type, for each peak, fit y~ c0+ c_strain+ c_gender+ age*c1 and find peaks with significant p-values for the coefficient c1. This is to find common aging pattern across gender and strain. 
 
-YLIMMAX=40000
+YLIMMAX=10000
 source("../../ATACseq/src/runall_analysis_second.r")

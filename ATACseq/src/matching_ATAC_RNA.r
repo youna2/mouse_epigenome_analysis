@@ -1,3 +1,6 @@
+### This code is old, and the object bed is not included in the ATACseqData2.Rdata or RNAseqData2.Rdata anymore. If to use, must fix this
+
+
 library(edgeR)
 setwd("../results")
 previous.dir=getwd()

@@ -12,6 +12,7 @@ for(i in 1:length(all.path.res))
 pathwaymat=NULL
 for(j in 1:length(all.path.res[[i]][[2]]))
   {
+### indicate whether genes/peaks are up/down-regulated
     x=NULL
     if(!isnull(all.path.res[[i]][[2]][[j]]) & !isnull(all.path.res[[i]][[3]][[j]]))
       {
@@ -23,7 +24,7 @@ for(j in 1:length(all.path.res[[i]][[2]]))
         if(!isnull(all.path.res[[i]][[3]][[j]]))
           x=cbind(all.path.res[[i]][[3]][[j]],"down")
       }
-
+### choose between up/down p-value that are more significant 
     if(!is.null(x))
       {
         tablex=table(x[,1])
@@ -46,7 +47,7 @@ for(j in 1:length(all.path.res[[i]][[2]]))
   }
 
 
-balloonplot[[i]]=rbind(balloonplot[[i]],pathwaymat)
+if(!is.null(pathwaymat)) balloonplot[[i]]=rbind(balloonplot[[i]],pathwaymat)
 }
 
 

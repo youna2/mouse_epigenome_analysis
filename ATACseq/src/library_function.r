@@ -3,6 +3,38 @@ library(MASS)
 library(viridis)
 library(gtable)
 library(gridExtra)
+library(sva)
+
+add.number <- function(all.gene,path.annotation)
+  {
+    no=rep(NA,nrow(path.annotation))
+    for(i in 1:nrow(path.annotation))
+      {
+        no[i]=sum(path.annotation[i,1]==all.gene[,1])
+      }
+    return(no)
+    
+  }
+
+top.bottom <- function(x,top,bottom)
+{
+  z=y=rep(NA,ncol(x))
+  for(i in 1:ncol(x))
+    {
+      tmp=x[,i]
+      y[i]=mean(tmp[tmp>=quantile(tmp,top)])
+      z[i]=mean(tmp[tmp<=quantile(tmp,bottom)])
+    }
+  return(cbind(y,z))
+}
+
+MAplot <- function(x,cell.type)
+  {
+    y=ggplot(aes(logCPM,logFC,color=interaction(FDR<0.05,logFC<0)),data=x[order(-x$PValue),]) + geom_point(size=0.5) + scale_color_manual(values = c("FALSE.FALSE"="black","TRUE.FALSE"="firebrick1","FALSE.TRUE"="black","TRUE.TRUE"="dodgerblue"),guide=F) +  ggtitle(toupper(cell.type)) + scale_y_continuous(limits = c(-0.5,0.5)) + geom_hline(yintercept = 0, size=0.25) + theme(panel.border = element_rect(fill = NA,color = "black",size=0.25)) #+  theme_tufte(base_family = "Helvetica",base_size = 10)
+print(y)
+  }
+
+
 plot.correlationplot <- function(x,y,title,xlab,ylab)
   { 
     df=data.frame(ATAC=x,RNA=y)
@@ -10,8 +42,7 @@ plot.correlationplot <- function(x,y,title,xlab,ylab)
     if(RNA) margin=10^(-3) else margin=0
     
     temp=cor.test(x,y)
-    y <- ggplot(df,aes(ATAC, RNA))+ geom_point( aes(ATAC, RNA,color=density),size=1/10) + scale_color_viridis() +xlab(xlab)+ylab(ylab)+ggtitle(title)+annotate("text", label = paste("r=",signif(temp$estimate,2),sep=""), x = 0, y = quantile(y,1-margin), size = textsize, colour = "red")+ theme(legend.position="none") + stat_smooth(method="lm",col="grey", se=FALSE)+xlim(quantile(x,margin),quantile(x,1-margin))+ylim(quantile(y,margin),quantile(y,1-margin))
-
+    y <- ggplot(df,aes(ATAC, RNA))+ geom_point( aes(ATAC, RNA,color=density),size=1/10) + scale_color_viridis() +xlab(xlab)+ylab(ylab)+ggtitle(title)+annotate("text", label = paste("r=",signif(temp$estimate,2),sep=""), x = quantile(x,0.5), y = quantile(y,1-margin), size = textsize, colour = "red")+ theme(legend.position="none") + stat_smooth(method="lm",col="grey", se=FALSE)+xlim(min(0,quantile(x,margin)),quantile(x,1-margin))+ylim(min(0,quantile(y,margin)),quantile(y,1-margin))+geom_hline(color="grey",size=0.5,yintercept = 0) +geom_vline(color="grey",size=0.5,xintercept = 0) 
     return(y)
   }
 
@@ -30,7 +61,7 @@ plot.balloonplot.mouse <- function(balloonplot)
             if(i==3)
               {
                 pathwaymat=pathwaymat[as.numeric(pathwaymat[,2])<10^(-5),]
-                pathwaymat=pathwaymat[pathwaymat[,4]=="CD8.memory" | pathwaymat[,4]=="CD8.naive" ,]
+     #           pathwaymat=pathwaymat[pathwaymat[,4]=="CD8.memory" | pathwaymat[,4]=="CD8.naive" ,]
               }
         
             if(i!=3) pathwaymat=pathwaymat[pathwaymat[,4]!="CD8.memory" &pathwaymat[,4]!="CD8.naive" ,]
@@ -42,12 +73,15 @@ plot.balloonplot.mouse <- function(balloonplot)
 
             if(j ==4) sel=pathwaymat[,5]=="intercept" | pathwaymat[,5]=="slope"        
 
-            pathwaymat=pathwaymat[sel,]
+            if(sum(sel)>0)
+              {
+                pathwaymat=rbind(pathwaymat[sel,])
     
-            df=data.frame(pathid=pathwaymat[,1],logp=-log10(as.numeric(pathwaymat[,2])+10^(-30)),direction=(pathwaymat[,3]),tissue=pathwaymat[,4],class=pathwaymat[,5])
+                df=data.frame(pathid=pathwaymat[,1],logp=-log10(as.numeric(pathwaymat[,2])+10^(-30)),direction=(pathwaymat[,3]),tissue=pathwaymat[,4],class=pathwaymat[,5])
 
-            multiballoonplot[[j]]=(ggballoonplot(df, x = "tissue", y = "pathid", size = "logp", fill = "direction" ,facet.by="class",ggtheme = theme_bw()))+scale_fill_manual(values = c("down"="dodgerblue","up"="firebrick1"),guide=guide_legend(title = NULL))# +facet_wrap("class",scales="free_x") #+
+                multiballoonplot[[j]]=(ggballoonplot(df, x = "tissue", y = "pathid", size = "logp", fill = "direction" ,facet.by="class",ggtheme = theme_bw()))+scale_fill_manual(values = c("down"="dodgerblue","up"="firebrick1"),guide=guide_legend(title = NULL))# +facet_wrap("class",scales="free_x") #+
 #  scale_fill_viridis_c(option = "C")
+              }
           }
 
 #        if(i<3)
@@ -73,20 +107,21 @@ plot.balloonplot.human <- function(balloonplot)
 
         if(i==3)
           {
-            pathwaymat=pathwaymat[as.numeric(pathwaymat[,2])<10^(-3),]
+            pathwaymat=pathwaymat[as.numeric(pathwaymat[,2])<10^(-4),]
           }
                     
-        sel=pathwaymat[,5]=="within NZO" | pathwaymat[,5]=="within B6"| pathwaymat[,5]=="human"
+        sel=pathwaymat[,5]=="within NZO" | pathwaymat[,5]=="within B6"| pathwaymat[,5]=="human"| pathwaymat[,5]=="common"
 
-
-        pathwaymat=pathwaymat[sel,]
+        if(sum(sel)>0)
+          {
+            pathwaymat=rbind(pathwaymat[sel,])
     
-        df=data.frame(pathid=pathwaymat[,1],logp=-log10(as.numeric(pathwaymat[,2])+10^(-30)),direction=(pathwaymat[,3]),tissue=pathwaymat[,4],class=pathwaymat[,5])
+            df=data.frame(pathid=pathwaymat[,1],logp=-log10(as.numeric(pathwaymat[,2])+10^(-30)),direction=(pathwaymat[,3]),tissue=pathwaymat[,4],class=pathwaymat[,5])
 
-        multiballoonplot[[i]]=(ggballoonplot(df, x = "tissue", y = "pathid", size = "logp", fill = "direction",facet.by="class" ,ggtheme = theme_bw()))+scale_fill_manual(values = c("down"="dodgerblue","up"="firebrick1"),guide=guide_legend(title = NULL))# +facet_wrap("class",scales="free_x") #+
+            multiballoonplot[[i]]=(ggballoonplot(df, x = "class", y = "pathid", size = "logp", fill = "direction" ,ggtheme = theme_bw()))+scale_fill_manual(values = c("down"="dodgerblue","up"="firebrick1"),guide=guide_legend(title = NULL))# +facet_wrap("class",scales="free_x") #+
 #  scale_fill_viridis_c(option = "C")
+          }
       }
-
     p1=multiballoonplot[[1]]
     p2=multiballoonplot[[2]]
     p3=multiballoonplot[[3]]
@@ -99,7 +134,7 @@ module.enrichment.test <- function(human.diff.gene,all.gene,gene.universe)
 print(c("geneuniverse",mean(toupper(human.diff.gene) %in% gene.universe)))
     human.diff.gene=intersect(toupper(human.diff.gene),gene.universe)
                     pathid=unique(all.gene[,1])
-                    pathp=rep(NA,length(pathid))
+                    pathp=pathno=rep(NA,length(pathid))
                     for(i in 1:length(pathid))
                       {
                         path.gene=toupper(all.gene[all.gene[,1]==pathid[i],2])### all genes in pathway i
@@ -116,12 +151,12 @@ print(c("geneuniverse",mean(toupper(human.diff.gene) %in% gene.universe)))
                         whitepick=lintersection-1
 
                         pathp[i]= 1-phyper(whitepick,white,black,pick)
-
+                        pathno[i]=lintersection
 #                        temp=match(intersection,genesV2[,2])
                         
                       }
 
-                    return(list(pathid,pathp))
+                    return(list(pathid,pathp,pathno))
   }
 
 
@@ -215,7 +250,7 @@ twoway.barplot <- function(x,y,z,labels,breaks,xlab,ylab,title,YLIM)
                   labs(x=xlab, y=ylab) +
                     theme_minimal(base_size = 8) +
                       theme(axis.text.y = element_text(size=8),aspect.ratio = 1,panel.grid.major.y = element_line(color="honeydew2"))+ggtitle(title)+ylim(YLIM)
-    return(p1)
+    return(list(df,p1))
   }
 
 
@@ -313,37 +348,105 @@ print(sum(sel))
 write.table(cbind(annotation[ sel,"Entrez.ID"],p.cut,-1),file=paste(topgene,"_all_decreasing",".txt",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
 
 }
-diff.peaks <- function(p.mat,fc.mat,topgene)
+diff.peaks <- function()
   {
 ### differential genes for each tissue ####
-df=NULL
-    for(i in 1:ncol(p.mat))
+
+    p1=p2=vector("list",2)
+    TISSUE=c("BM"," Spleen","PBL","CD8.memory","CD8.naive")
+    STRAIN=c("B6","NZO")
+    for(k in 1:2)
       {
-        temptissue=colnames(p.mat)[i]
-        print(temptissue)
-        print(sum(p.mat[,i]<0.05))
-        sel=which(p.mat[,i]<0.05)
-        write.table(cbind(annotation[ sel,"Entrez.ID"],p.mat[sel,i],fc.mat[sel,i]),file=paste(topgene,temptissue,".txt",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
+        df=df2=NULL    
+        for(BTID in 2:5)
+          {
+        load(paste("../results",BTID,"/pmat_fcmat_within ",STRAIN[k],"_before_filtering.Rdata",sep=""))
+        p.mat=p.mat.strain
+        fc.mat=fc.mat.strain
+        temptissue=TISSUE[BTID]
 
+        for(i in 1:ncol(p.mat))
+          {
+#        temptissue=colnames(p.mat)[i]
 
-        
-        sel=which(p.mat[,i]<0.05 & fc.mat[,i]>0)
-        if(length(sel)>0) df=rbind(df,   cbind( paste(colnames(p.mat)[i],"+"), removing.paren(annotation[sel,"Annotation"])))
-        sel=which(p.mat[,i]<0.05 & fc.mat[,i]<0)
-        if(length(sel)>0) df=rbind(df,   cbind(paste(colnames(p.mat)[i],"-"),removing.paren(annotation[sel,"Annotation"])))
+            sel=which(p.mat[,i]<0.05)
+      #  write.table(cbind(annotation[ sel,"Entrez.ID"],p.mat[sel,i],fc.mat[sel,i]),file=paste(topgene,temptissue,".txt",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
+            
+            tmp=c(nrow(p.mat), sum(p.mat[,i]<0.05& fc.mat[,i]>0), sum(p.mat[,i]<0.05& fc.mat[,i]<0))
 
+            number=c(tmp[1]-sum(tmp[-1]),tmp[-1])
+            tissue=rep(temptissue,length(tmp))
+            diff=c("0","+","-")
+            df2=rbind(df2,cbind(tissue,number,diff))
+            
+            sel=which(p.mat[,i]<0.05 & fc.mat[,i]>0)
+            if(length(sel)>0) df=rbind(df,cbind(paste(temptissue,"+"), removing.paren(annotation.orig[sel,"Annotation"])))
+            sel=which(p.mat[,i]<0.05 & fc.mat[,i]<0)
+            if(length(sel)>0) df=rbind(df,cbind(paste(temptissue,"-"),removing.paren(annotation.orig[sel,"Annotation"])))
+
+          }
       }
-temp=table(df[,1],df[,2])
-temp=temp/rowSums(temp)
-df=data.frame(tissue=rep(rownames(temp),ncol(temp)),percent=c(temp),annotation=rep(colnames(temp),each=nrow(temp)))
+    temp=table(df[,1],df[,2])
+    temp=temp/rowSums(temp)*100
+    df=data.frame(tissue=rep(rownames(temp),ncol(temp)),percent=c(temp),annotation=rep(colnames(temp),each=nrow(temp)))
 
-p <- ggplot(data=df, aes(x=tissue, y=percent, fill=annotation)) +
-  geom_bar(stat="identity")+   scale_fill_brewer(palette = "Set3") +   ylab("Percent") +    ggtitle("Homer annotation of peaks")+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+    p1[[k]] <- ggplot(data=df, aes(x=tissue, y=percent, fill=annotation)) +
+      geom_bar(stat="identity")+   scale_fill_brewer(palette = "Set3") +   ylab("Percent") +    ggtitle(paste("Homer annotation of differential peaks in",STRAIN[k]))+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-print( p)
-        
-      
+
+    df2=as.data.frame(df2)
+    df2$number=as.numeric(as.character(df2$number))
+    
+    p2[[k]] <- ggplot(data=df2, aes(x=tissue, y=number, fill=diff))+geom_bar(stat="identity")+ggtitle(paste("Number of differential peaks in",STRAIN[k]))+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
   }
+    p <- multiplot(p1[[1]],p2[[1]],p1[[2]],p2[[2]],cols=2)
+    return(p)
+  }
+draw.barplot <- function(barplot)
+  {
+    STRAIN=c("B6","NZO")
+    pathwaytype=c("cell type","immune module")
+    p=vector("list",2)
+    for(i in 1:2)
+      {
+        p[[i]]=vector("list",2)
+        for(k in 1:2)
+          {
+            df2=as.data.frame(barplot[[i]][barplot[[i]][,ncol(barplot[[i]])]==paste("within",STRAIN[k]),])
+            names(df2)=c("pathway","number","total","dir","tissue","strain")
+            df2$tissue=paste(df2$tissue," ",df2$dir," (",df2$total,")",sep="")
+            df2$number=as.numeric(as.character(df2$number))
+    
+            p[[i]][[k]] <- ggplot(data=df2, aes(x=tissue, y=number, fill=pathway))+geom_bar(stat="identity")+ggtitle(paste("Differential peaks in",STRAIN[k]))+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+ scale_fill_discrete(name=pathwaytype[i])
+          }
+      }
+    multiplot(p[[1]][[1]],p[[1]][[2]],p[[2]][[1]],p[[2]][[2]],cols=2)
+   # return(p)
+  }
+
+
+draw.barplot.human <- function(barplot)
+  {
+    pathwaytype=c("cell type","immune module")
+    p=vector("list",2)
+    for(i in 1:2)
+      {
+            df2=as.data.frame(barplot[[i]][(barplot[[i]][,ncol(barplot[[i]])]==paste("within B6") |barplot[[i]][,ncol(barplot[[i]])]==paste("within NZO") |  barplot[[i]][,ncol(barplot[[i]])]=="human"  |  barplot[[i]][,ncol(barplot[[i]])]== "common") &   barplot[[i]][,ncol(barplot[[i]])-1]=="PBL",])
+            names(df2)=c("pathway","number","total","dir","tissue","strain")
+            df2$tissue=paste(df2$strain," ",df2$dir," (",df2$total,")",sep="")
+            df2$number=as.numeric(as.character(df2$number))
+    
+            p[[i]] <- ggplot(data=df2, aes(x=tissue, y=number, fill=pathway))+geom_bar(stat="identity")+ggtitle(paste("Differential peaks in PBMC/PBL"))+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+ scale_fill_discrete(name=pathwaytype[i])
+          
+      }
+    multiplot(p[[1]],NA,p[[2]],NA,cols=2)
+   # return(p)
+  }
+
+
+
+
 removing.paren <- function(x)
 {
   y=x
@@ -363,15 +466,15 @@ pick_null_pathway <- function(x)
 
 #################
 
-edgeRfitcommon <- function(y,age,gender,type)
+edgeRfitcommon <- function(y,age,gender,type,librarysize)
   {
 
     if(tid==5)
       {
     sel= (type=="B6")
-    resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+    resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel],librarysize[sel])
     sel= (type=="NZO")
-    resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+    resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel],librarysize[sel])
 
     res=matrix(1,nr=nrow(resB6),nc=ncol(resB6))
     colnames(res)=colnames(resB6)
@@ -386,9 +489,9 @@ edgeRfitcommon <- function(y,age,gender,type)
  if(tid==6)
       {
     sel= (type=="B6")
-    resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+    resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel],librarysize[sel])
     sel= (type=="NZO")
-    resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+    resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel],librarysize[sel])
 
     res=matrix(1,nr=nrow(resB6),nc=ncol(resB6))
     colnames(res)=colnames(resB6)
@@ -403,9 +506,9 @@ edgeRfitcommon <- function(y,age,gender,type)
      if(tid==7)
       {
     sel= (type=="B6")
-    resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+    resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel],librarysize[sel])
     sel= (type=="NZO")
-    resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+    resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel],librarysize[sel])
 
     res=matrix(1,nr=nrow(resB6),nc=ncol(resB6))
     colnames(res)=colnames(resB6)
@@ -420,9 +523,9 @@ edgeRfitcommon <- function(y,age,gender,type)
      if(tid==8)
       {
     sel= (type=="B6")
-    resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+    resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel],librarysize[sel])
     sel= (type=="NZO")
-    resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+    resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel],librarysize[sel])
 
     res=matrix(1,nr=nrow(resB6),nc=ncol(resB6))
     colnames(res)=colnames(resB6)
@@ -441,17 +544,17 @@ edgeRfitcommon <- function(y,age,gender,type)
     if(tid==9)
       {
         sel= (type=="B6")
-        resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+        resB6=edgeRfit(y[,sel],age[sel],gender[sel],type[sel],librarysize[sel])
         res=resB6
       }
     if(tid==10)
       {
         sel= (type=="NZO")
-        resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
+        resNZO=edgeRfit(y[,sel],age[sel],gender[sel],type[sel],librarysize[sel])
         res=resNZO
       }
     if(tid==11)
-      res=edgeRfit(y,age,gender,type)
+      res=edgeRfit(y,age,gender,type,librarysize)
     
     ## sel= (type=="B6" & gender =="M")
     ## resB6M=edgeRfit(y[,sel],age[sel],gender[sel],type[sel])
@@ -481,7 +584,7 @@ edgeRfitcommon <- function(y,age,gender,type)
 
     
 
-edgeRfit <- function(y,age,gender,type)
+edgeRfit <- function(y,age,gender,type,librarysize)
   {
     if(length(unique(gender))==1)
       {
@@ -508,6 +611,56 @@ edgeRfit <- function(y,age,gender,type)
     return(atac.glmtop)
   }
 
+
+
+    
+
+## edgeRfit <- function(y,age,gender,type,librarysize)
+##   {
+##     if(length(unique(gender))==1)
+##       {
+##         if(length(unique(type))==1)
+##           {
+##             design <- model.matrix(~age)
+##             design.null = cbind(design[,1])
+##           }else{
+##             design <- model.matrix(~age+type)
+##             design.null = model.matrix(~type)
+##           }
+##           } else
+##     {
+##       if(length(unique(type))==1)
+##         {
+##           design <- model.matrix(~age+gender)
+##           design.null = model.matrix(~gender)
+##         }else {
+##           design <- model.matrix(~age+gender+type)
+##           design.null = model.matrix(~gender+type)
+##         }
+##     }#### one can treat age as a continuous variable. When continuous variable, the logFC is the log fold change per increase of age by 1, for example, when comparing logFC from 1)  age=old, young vs. 2) age=0 vs 10, I confirmed that logFC of 2) is logFC of 1) divided by 10 (the sign may be opposite).  Given the link function for negative binomial regression, it is a linear trend on the scale of the model formula and linear predictor, and this corresponds to an exponential trend on the scale of the predicted counts.
+##     rownames(design) <- colnames(y)
+
+##     sv <- svaseq(cpm(y,normalized.lib.sizes=TRUE)+10^(-10),design,design.null,n.sv = 1)$sv
+
+## # if(utissue[i]=="PBL" & type[1]=="B6") design <- cbind(design,librarysize) else design <- cbind(design,sv,librarysize)
+##     design <- cbind(design,sv)
+    
+##     y <- estimateDisp(y, design, robust=TRUE)
+
+##                                         # Edit this to change estimation method
+##                                         # try both methods, usually there is not a big difference
+##                                         # robust settings help with noise
+##     test.method="glm" # ql | glm
+
+##     if (test.method=="glm") {
+##       atac.glm <- glmFit(y, design)
+##       atac.glmfit <- glmLRT(atac.glm,coef=2)
+##     }
+
+##     atac.glmtop <- topTags(atac.glmfit,n=nrow(bed),sort.by="none", adjust.method = "fdr")$table
+
+##     return(atac.glmtop)
+##   }
 
 
 #################

@@ -14,6 +14,9 @@ for(selB6 in c(TRUE,FALSE))
     corvec=rep(NA,5)
     total.FC.graph=vector("list",5)    
 
+    for(BTID in 2:5)
+      {
+
         load("../../RNAseq/results/RNAseqData2.Rdata")
 
 
@@ -36,11 +39,11 @@ for(selB6 in c(TRUE,FALSE))
         p.mat.RNA=p.mat
         fc.mat.RNA=fc.mat
 
-    load("../../ATACseq/results/ATACseqData2.Rdata")
+        load(paste("../../ATACseq/results",BTID,"/ATACseqData2.Rdata",sep=""))
 
-    if(selB6) load("../../ATACseq/results/pmat_fcmat_within B6.Rdata") else load("../../ATACseq/results/pmat_fcmat_within NZO.Rdata")
-    p.mat=p.mat.strain
-    fc.mat=fc.mat.strain
+        if(selB6) load(paste("../../ATACseq/results",BTID,"/pmat_fcmat_within B6.Rdata",sep="")) else load(paste("../../ATACseq/results",BTID,"/pmat_fcmat_within NZO.Rdata",sep=""))
+        p.mat=p.mat.strain
+        fc.mat=fc.mat.strain
 
 
         onlypromoter=F ### this doesn't make much difference
@@ -48,8 +51,8 @@ for(selB6 in c(TRUE,FALSE))
           {
             sel=(removing.paren(annotation[,"Annotation"])=="promoter-TSS ")
             annotation=annotation[sel,]
-            fc.mat=fc.mat[sel,]
-            p.mat=p.mat[sel,]
+            fc.mat=cbind(fc.mat[sel,])
+            p.mat=cbind(p.mat[sel,])
           }
 
         EntrezATAC=annotation[,"Entrez.ID"]
@@ -57,6 +60,9 @@ for(selB6 in c(TRUE,FALSE))
         p.mat.ATAC=p.mat
         fc.mat.ATAC=fc.mat
 
+        p.mat.RNA=cbind(p.mat.RNA[,colnames(p.mat.ATAC)])
+        fc.mat.RNA=cbind(fc.mat.RNA[,colnames(fc.mat.ATAC)])
+        
         common=intersect(unique(EntrezRNA),unique(EntrezATAC))
         length(common)
         matching.index=matrix(NA,nr=length(common),nc=2)
@@ -76,34 +82,35 @@ for(selB6 in c(TRUE,FALSE))
                                         #geom_abline(color="grey",slope=1,intercept=0)
 
 
-        ATAC.FC= -sign(fc.mat.ATAC[matching.index[,1],])*log(p.mat.ATAC[matching.index[,1],])
-        RNA.FC= -sign(fc.mat.RNA[matching.index[,2],])*log(p.mat.RNA[matching.index[,2],])
+        ATAC.FC=cbind( -sign(fc.mat.ATAC[matching.index[,1],])*log(p.mat.ATAC[matching.index[,1],]))
+        RNA.FC=cbind( -sign(fc.mat.RNA[matching.index[,2],])*log(p.mat.RNA[matching.index[,2],]))
 
         mouseentrez=common
 
 
-    for(i in 1:5)
-      {
-        x=fc.mat.ATAC[matching.index[,1],i]
-        y=fc.mat.RNA[matching.index[,2],i]
-
-        x.p=p.mat.ATAC[matching.index[,1],i]
-        y.p=p.mat.RNA[matching.index[,2],i]
-
-#        x=x[x.p<0.1]
-#        y=y[x.p<0.1]
-        
-        title=strsplit(colnames(fc.mat.ATAC)[i]," ")[[1]][1]
-        xlab="log FC in ATAC"
-        if(i==1)
+        for(i in 1:ncol(fc.mat.ATAC))
           {
-           if(selB6) ylab="B6\nlog FC in RNA" else ylab="NZO\nlog FC in RNA"
-          }else{
-            ylab="log FC in RNA"
+            x=fc.mat.ATAC[matching.index[,1],i]
+            y=fc.mat.RNA[matching.index[,2],i]
+
+            x.p=p.mat.ATAC[matching.index[,1],i]
+            y.p=p.mat.RNA[matching.index[,2],i]
+
+                                        #        x=x[x.p<0.1]
+                                        #        y=y[x.p<0.1]
+            
+            title=strsplit(colnames(fc.mat.ATAC)[i]," ")[[1]][1]
+            xlab="log FC in ATAC"
+            if(i==1)
+              {
+                if(selB6) ylab="B6\nlog FC in RNA" else ylab="NZO\nlog FC in RNA"
+              }else{
+                ylab="log FC in RNA"
+              }
+            total.FC.graph[[BTID]] <- plot.correlationplot(x,y,title,xlab,ylab)
+            
+                                        #        corvec[i]=temp$estimate
           }
-        total.FC.graph[[i]] <- plot.correlationplot(x,y,title,xlab,ylab)
-        
-#        corvec[i]=temp$estimate
       }
     if(selB6)
       {
@@ -114,6 +121,7 @@ for(selB6 in c(TRUE,FALSE))
         save(ATAC.FC,RNA.FC,mouseentrez,file="../../ATACseq/results/FC_ATAC_RNA_NZO.Rdata")
       }
   }
+
 draw.heatmap=T
 if(draw.heatmap)
   {

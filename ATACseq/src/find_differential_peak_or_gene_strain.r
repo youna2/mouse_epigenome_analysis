@@ -104,12 +104,12 @@ if(tid<5)
         if(jj==1)
           {
                                         #            write.csv(fisher.p,file=paste("fisher_pvalue_increasing_strain.csv",sep=""),quote=F)
-            pheatmap(fisher.stat,scale="none",cluster_cols = FALSE,cluster_rows=FALSE,main=paste("overlap of peaks",positivepeak,"(odds ratio)"))
+           # pheatmap(fisher.stat,scale="none",cluster_cols = FALSE,cluster_rows=FALSE,main=paste("overlap of peaks",positivepeak,"(odds ratio)"))
 
           } else
         {
                                         #         write.csv(fisher.p,file=paste("fisher_pvalue_decreasing_strain.csv",sep=""),quote=F)
-          pheatmap(fisher.stat,scale="none",cluster_cols = FALSE,cluster_rows=FALSE,main=paste("overlap of peaks",negativepeak,"(odds ratio)"))
+         # pheatmap(fisher.stat,scale="none",cluster_cols = FALSE,cluster_rows=FALSE,main=paste("overlap of peaks",negativepeak,"(odds ratio)"))
 
         }
       }
@@ -123,7 +123,20 @@ load("../../ATACseq/data/biomaRt_human_mouse.Rdata")
 
 load("../../ATACseq/data/mousehumangene_annotation.Rdata")
 
-all.path.res=vector("list",4)
+
+
+mouse.gene=as.numeric(annotation[,"Entrez.ID"])
+genesV2 = getLDS(attributes = c("entrezgene"), filters = "entrezgene", values = mouse.gene , mart = mouse, attributesL = c("hgnc_symbol"), martL = human, uniqueRows=T)
+
+print(mean(genesV2[,1] %in% mouse.gene))
+
+gene.universe=unique(toupper(genesV2[, 2]))
+
+
+
+
+
+all.path.res=all.path.res2=vector("list",4)
 for(pathwaytype in 1:2)
   {
     if(pathwaytype==1)
@@ -135,8 +148,8 @@ for(pathwaytype in 1:2)
         celltype.annotation=FALSE
       }
 
-    enrichpath=enrichpath.wiki=enrichpath.kegg=vector("list",3)
-    for(i in 1:3) enrichpath[[i]]=enrichpath.wiki[[i]]=enrichpath.kegg[[i]]=vector("list",length(tissue.gender.type))
+    enrichpath=nopath=enrichpath.wiki=enrichpath.kegg=vector("list",3)
+    for(i in 1:3) enrichpath[[i]]=nopath[[i]]=enrichpath.wiki[[i]]=enrichpath.kegg[[i]]=vector("list",length(tissue.gender.type))
     
     for(N in 2:3)
       {
@@ -186,10 +199,12 @@ for(pathwaytype in 1:2)
           }
       }
     all.path.res[[pathwaytype]]=enrichpath
+    all.path.res2[[pathwaytype]]=nopath
   }
 all.path.res[[3]]=enrichpath.wiki
 all.path.res[[4]]=enrichpath.kegg
 source("../../ATACseq/src/balloonplot.r")
+source("../../ATACseq/src/barplot.r")
                                         # save(all.path.res,file="enrichpathwayStrain.Rdata")
 
 

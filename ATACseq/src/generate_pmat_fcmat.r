@@ -1,7 +1,7 @@
 
 p.cutoff=0.1
 
-p.mat.strain=NULL ##bed[,"p.value"]
+meanexp=p.mat.strain=NULL ##bed[,"p.value"]
 fc.mat.strain= NULL  ##-bed[,"Fold"]
 if(tid>=5)
   {
@@ -27,20 +27,19 @@ if(tid>=5)
   }
 #### remove samples of age 26.75 months ######
 
-selectsample= (AGE != 26.75)
-y0=Y[,selectsample]
-y0forheatmap=bed[,selectsample]
-age0=AGE[selectsample]
-gender0=GENDER[selectsample]
-tissue0=TISSUE[selectsample]
-type0=TYPE[selectsample]
-samplemouseid0=SAMPLEMOUSEID[selectsample]
+y0=Y
 
+age0=AGE
+gender0=GENDER
+tissue0=TISSUE
+type0=TYPE
+samplemouseid0=SAMPLEMOUSEID
+librarysize0=LIBRARYSIZE
 ## Do differential analysis between NZO and B6 in each tissue type ######
 
-setwd("../results")
+setwd(paste("../results",BTID,sep=""))
 previous.dir=getwd()
-utissue=c( "spleen", "BM", "CD8.memory","CD8.naive", "PBL")         
+utissue=unique(tissue0)         
 
 if(commonpattern)
   {
@@ -81,29 +80,51 @@ if(commonpattern)
 
 for(i in 1:length(utissue))
   {
+    if(tid==9) meanexp=cbind(meanexp,rowMeans(bed[,tissue0==utissue[i] & type0=="B6"]))
+    
+    if(tid==10) meanexp=cbind(meanexp,rowMeans(bed[,tissue0==utissue[i] & type0=="NZO"]))
+    
     y=y0[,tissue0==utissue[i]]
     age=age0[tissue0==utissue[i]]
     gender=gender0[tissue0==utissue[i]]
     type=type0[tissue0==utissue[i]]
+    librarysize=librarysize0[tissue0==utissue[i]]
+    
     if(length(unique(age[type=="B6"]))>1 & length(unique(age[type=="NZO"]))>1)
       {
 ### Do differential or common analysis between NZO and B6
 
         
-        if(commonpattern)  atac.glmtop.strain=edgeRfitcommon(y,age,gender,type) else atac.glmtop.strain=edgeRfitstrain(y,age,gender,type)
-        
+        if(commonpattern)  atac.glmtop.strain=edgeRfitcommon(y,age,gender,type,librarysize) else atac.glmtop.strain=edgeRfitstrain(y,age,gender,type)
+
+        if(tid==9 | tid==10) MAplot(atac.glmtop.strain,utissue[i])
 
         sel=which(atac.glmtop.strain[,"FDR"]<p.cutoff)
 #        write.table(cbind(annotation[ sel,"Entrez.ID"],NA,atac.glmtop.strain[sel,"logFC"]),file=paste(topgene,paste(utissue[i],int.or.slope),".txt",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
-
-        
         
 #### draw heatmap of age-increasing/decreasing peaks or genes  #################
+            atac.glmtop=atac.glmtop.strain
+
+
+        if(tid==9)
+          {
+            write.table(annotation.orig[atac.glmtop[,"FDR"]<0.05 & atac.glmtop[,"logFC"]>0  ,1:3],file=paste("diffpeak_pos_B6_",utissue[i],".bed",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
+            write.table(annotation.orig[atac.glmtop[,"FDR"]<0.05 & atac.glmtop[,"logFC"]<0  ,1:3],file=paste("diffpeak_neg_B6_",utissue[i],".bed",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
+          }  
+
+
+        if(tid==10)
+          {
+            write.table(annotation.orig[atac.glmtop[,"FDR"]<0.05 & atac.glmtop[,"logFC"]>0  ,1:3],file=paste("diffpeak_pos_NZO_",utissue[i],".bed",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
+            write.table(annotation.orig[atac.glmtop[,"FDR"]<0.05 & atac.glmtop[,"logFC"]<0  ,1:3],file=paste("diffpeak_neg_NZO_",utissue[i],".bed",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
+          }  
+
+        p.mat.strain=cbind(p.mat.strain,atac.glmtop[,"FDR"])
+        fc.mat.strain=cbind(fc.mat.strain,atac.glmtop[,"logFC"])
+
         if(length(sel)>5)
           {
-            atac.glmtop=atac.glmtop.strain
-            p.mat.strain=cbind(p.mat.strain,atac.glmtop[,"FDR"])
-            fc.mat.strain=cbind(fc.mat.strain,atac.glmtop[,"logFC"])
+
             heatmapmat=y0forheatmap[atac.glmtop[,"FDR"]<p.cutoff,tissue0==utissue[i]]
 
             
@@ -122,9 +143,9 @@ for(i in 1:length(utissue))
             heatmapmat=heatmapmat[,order(type)]
 
 
-            if(nrow(heatmapmat)>40000)
+            if(nrow(heatmapmat)>20000)
               {
-                tmpsample=sample(1:nrow(heatmapmat),40000)
+                tmpsample=sample(1:nrow(heatmapmat),20000)
                 heatmapmat=heatmapmat[tmpsample,]
                 annot=annot[tmpsample]
               }
@@ -143,21 +164,39 @@ for(i in 1:length(utissue))
                     colnames(annot)="intercept"
                   }
               }
-            if(min(heatmapmat)==0) heatmapmat=heatmapmat+1
+            if(min(heatmapmat)==0) heatmapmat=heatmapmat+min(heatmapmat[heatmapmat>0])
             
-           # pheatmap(log(heatmapmat),scale="row",cluster_cols = FALSE,main=paste(utissue[i], sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]>0),positivepeak, sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]<0),negativepeak),annotation_row=annot,show_rownames=F,color=colorRampPalette(c("blue","white","red"))(100))  
+            pheatmap(log(heatmapmat),scale="none",cluster_cols = FALSE,main=paste(utissue[i], sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]>0),positivepeak, sum(atac.glmtop[,"FDR"]<p.cutoff & atac.glmtop[,"logFC"]<0),negativepeak),annotation_row=annot,show_rownames=F,color=colorRampPalette(c("blue","white","red"))(100))  
                                         #   
-            colnames(fc.mat.strain)[ncol(fc.mat.strain)]=colnames(p.mat.strain)[ncol(p.mat.strain)]=paste(utissue[i],int.or.slope)
-          }
+      }
+        colnames(fc.mat.strain)[ncol(fc.mat.strain)]=colnames(p.mat.strain)[ncol(p.mat.strain)]=paste(utissue[i],int.or.slope)
+          
       }
   }
-save(p.mat.strain,fc.mat.strain,file=paste("pmat_fcmat_",int.or.slope,".Rdata",sep=""))
+save(annotation.orig,meanexp,p.mat.strain,fc.mat.strain,file=paste("pmat_fcmat_",int.or.slope,"_before_filtering.Rdata",sep=""))
 
-dev.off()
+print("dim bed, Y, annotation, pmat before")
+print(dim(bed))
+print(dim(Y))
+print(dim(annotation))
+print(dim(p.mat.strain))
 if(sum(strsplit(getwd(),"/")[[1]]=="ATACseq")==1 )
   {
-       bed=bed[selectgene,]
-       Y=Y[selectgene,]
-       annotation=annotation[selectgene,]
-       save(bed,Y,annotation,AGE,GENDER,TISSUE,STRAIN,TYPE,SAMPLEMOUSEID,file=filename)
-     }
+    tmp=colnames(p.mat.strain)
+    p.mat.strain=cbind(p.mat.strain[selectgene,])
+    colnames(p.mat.strain)=tmp
+    tmp=colnames(fc.mat.strain)
+    fc.mat.strain=cbind(fc.mat.strain[selectgene,])
+    colnames(fc.mat.strain)=tmp
+
+    if(tid==9 | tid==10) meanexp=cbind(meanexp[selectgene,])
+  }
+
+save(meanexp,p.mat.strain,fc.mat.strain,file=paste("pmat_fcmat_",int.or.slope,".Rdata",sep=""))
+
+dev.off()
+print("dim bed, Y, annotation, pmat after (only ATAC change)")
+print(dim(bed))
+print(dim(Y))
+print(dim(annotation))
+print(dim(p.mat.strain))

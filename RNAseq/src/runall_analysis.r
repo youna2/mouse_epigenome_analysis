@@ -10,6 +10,7 @@ source("../../ATACseq/src/PVCA.r")
 y <- DGEList(counts=bed)
 Y <- calcNormFactors(y,method="TMM")
 
+librarysize=y$samples[,"lib.size"]
 
 pdf(file="../results/PCA_RNA.pdf")
 STRAIN=TYPE
@@ -20,7 +21,27 @@ PlotPVCA(res, "")
 
 bed= cpm(Y, normalized.lib.sizes=TRUE)
 PCA(bed,color.var)
+
+bed.noTMM= cpm(y, normalized.lib.sizes=TRUE)
+bed.noTMM=bed.noTMM[,order(librarysize)]
+librarysize=librarysize[order(librarysize)]
+par(mfrow=c(4,1))
+for(i in seq(from=1,to=ncol(bed.noTMM),length.out=10)) hist(bed.noTMM[,i][bed.noTMM[,i]<=quantile(bed.noTMM[,i],0.9)&  bed.noTMM[,i]>quantile(bed.noTMM[,i],0) ],breaks=1000,main=paste("lib=",signif(librarysize[i],2),"var=",round(var(bed.noTMM[,i]),2)))
+
+
+
+
+top.bot=top.bottom(bed.noTMM,0.9,0.6)
+par(mfrow=c(2,2))
+plot(top.bot[,1],librarysize)
+plot(top.bot[,2],librarysize)
+plot(colSums(bed.noTMM),librarysize)
+plot(apply(bed.noTMM,2,var),librarysize)
+plot(apply(bed.noTMM,2,median),librarysize)
+plot(apply(bed.noTMM,2,mean),librarysize)
+
 dev.off()
+LIBRARYSIZE=log(y$samples[,"lib.size"])
 
 source("../../ATACseq/src/remove_problemsample.r")
 

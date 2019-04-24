@@ -38,7 +38,7 @@ STRAIN=meta[,2]
 GENDER=meta[,3]
 AGE=as.numeric(meta[,4])
 SAMPLEMOUSEID=meta[,5]
-################
+###run until here in order to generate the bed files and other information needed for age_prediction.r #############
 TRANSFORM=F
 
 dat=as.data.frame(flow)

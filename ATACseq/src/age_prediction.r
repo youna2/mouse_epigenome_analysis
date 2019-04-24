@@ -84,20 +84,23 @@ print("sel");print(sel);print(pred_elastic)
 }
 
 
-#AGE[STRAIN=="NZO" & GENDER=="M"]=AGE[STRAIN=="NZO" & GENDER=="M"]*894/463
-#AGE[STRAIN=="NZO" & GENDER=="F"]=AGE[STRAIN=="NZO" & GENDER=="F"]*856/548
+# If you want to regenerate the bed file, for ATAC-seq you need to rerun ../../ATACseq/src/runall_analysis.r  until remove_problemsample.r with BTID = 6, if not, you can load the bed file
+# For RNAseq, to regenerate the bed file, you need to rerun ../../RNAseq/src/runall_analysis.r until remove_problemsample.r, If not, you can load bed file###
+if(ATAC) load("../../ATACseq/data/ATACseqData_for_age_prediction.Rdata")
+if(RNA) load("../../RNAseq/data/RNAseqData_for_age_prediction.Rdata")
 
-
-### This is for mouse RNA and ATAC data obtained after running runall_analysis.r until remove_problemsample.r
 rownames(bed)=annotation.orig[,"Entrez.ID"]
 bed=bed[!is.na(annotation.orig[,"Entrez.ID"]),]
 annotation.orig=cbind(annotation.orig[!is.na(annotation.orig[,"Entrez.ID"]),])
-#################################################################################
 
 
+### For flow data, to regenerate the bed file, you need to rerun ../../flow/src/runall_analysis.r until before TRANSFORM=F, if not, you can load bed file ###
 
+if(flow) load("../../flow/data/FlowData_for_age_prediction.Rdata")
 
 ### This is for human data #######
+### For mouse, set humandata =FALSE, for human, humandata=TRUE,
+### For RNA, set RNA=TRUE. For ATAC, set ATAC=TRUE
 if(humandata)
   {
     if(RNA)

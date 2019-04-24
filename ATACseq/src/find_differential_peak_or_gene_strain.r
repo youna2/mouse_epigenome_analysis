@@ -134,22 +134,46 @@ gene.universe=unique(toupper(genesV2[, 2]))
 
 
 
+all.path.res=all.path.res2=vector("list",25)
 
 
-all.path.res=all.path.res2=vector("list",4)
-for(pathwaytype in 1:2)
+for(pathwaytype in 1:7)
   {
+    immunemodule=celltype.annotation=celltype.annotation2=celltype.annotation3=celltype.annotation4=celltype.annotation5=celltype.annotation6=FALSE
     if(pathwaytype==1)
+      celltype.annotation=TRUE
+      
+    if(pathwaytype==2)
+      immunemodule=TRUE
+
+    if(pathwaytype==3)
+      celltype.annotation2=TRUE
+  
+    if(pathwaytype==4)
+      celltype.annotation3=TRUE
+  
+    if(pathwaytype==5)
+      celltype.annotation4=TRUE
+  
+    if(pathwaytype==6)
+      celltype.annotation5=TRUE
+
+    if(pathwaytype==7)
+      celltype.annotation6=TRUE
+
+    if(pathwaytype==2)
       {
-        immunemodule=FALSE
-        celltype.annotation=TRUE
-      }else{
-        immunemodule=TRUE
-        celltype.annotation=FALSE
+        enrichpath.wiki=vector("list",18)
+        for(count in 1:length(enrichpath.wiki))
+          {
+            enrichpath.wiki[[count]]=vector("list",3)
+            for(i in 1:3)
+              enrichpath.wiki[[count]][[i]]=vector("list",length(tissue.gender.type))
+          }
       }
 
-    enrichpath=nopath=enrichpath.wiki=enrichpath.kegg=vector("list",3)
-    for(i in 1:3) enrichpath[[i]]=nopath[[i]]=enrichpath.wiki[[i]]=enrichpath.kegg[[i]]=vector("list",length(tissue.gender.type))
+    enrichpath=nopath=vector("list",3)
+    for(i in 1:3) enrichpath[[i]]=nopath[[i]]=vector("list",length(tissue.gender.type))
     
     for(N in 2:3)
       {
@@ -201,25 +225,28 @@ for(pathwaytype in 1:2)
     all.path.res[[pathwaytype]]=enrichpath
     all.path.res2[[pathwaytype]]=nopath
   }
-all.path.res[[3]]=enrichpath.wiki
-all.path.res[[4]]=enrichpath.kegg
+
+for(count in 1:length(enrichpath.wiki))
+all.path.res[[count+7]]=enrichpath.wiki[[count]]
+
+
 source("../../ATACseq/src/balloonplot.r")
 source("../../ATACseq/src/barplot.r")
                                         # save(all.path.res,file="enrichpathwayStrain.Rdata")
 
 
-### draw plots of pathway analysis results ###
+## ### draw plots of pathway analysis results ###
 
-if(commonpattern)
-  {
+## if(commonpattern)
+##   {
 
-    pdf(paste("pathway",int.or.slope,"pattern.pdf",sep="_"))
+##     pdf(paste("pathway",int.or.slope,"pattern.pdf",sep="_"))
 
-  }else{
-    if(typeinteraction) pdf(file="pathwayplot_B6_vs_NZO_slope.pdf") else  pdf(file="pathwayplot_B6_vs_NZO_intercept.pdf")
-  }
+##   }else{
+##     if(typeinteraction) pdf(file="pathwayplot_B6_vs_NZO_slope.pdf") else  pdf(file="pathwayplot_B6_vs_NZO_intercept.pdf")
+##   }
 
-source("../../ATACseq/src/plot.r")
+## source("../../ATACseq/src/plot.r")
 
 
-dev.off()
+## dev.off()

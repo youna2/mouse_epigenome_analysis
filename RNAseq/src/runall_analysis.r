@@ -5,8 +5,20 @@ library(edgeR)
 load("../../RNAseq/data/RNAseqData.Rdata")
 source("../../ATACseq/src/library_function.r")
 source("../../ATACseq/src/PVCA.r")
-#### normalization #####
 
+### expressed gene ####
+utissue=unique(TISSUE)
+a=vector("list",length(utissue))
+names(a)=utissue
+for(i in 1:length(utissue))
+  a[[i]]=which(rowSums(bed[,TISSUE==utissue[i]]>1)>1)
+save(a,file="../results/expressed_gene_list.Rdata")
+tmp=table(unlist(a))
+expressedgene=as.numeric(names(tmp)[tmp==4])
+
+
+#### normalization #####
+BTID <- ""
 y <- DGEList(counts=bed)
 Y <- calcNormFactors(y,method="TMM")
 
@@ -42,7 +54,7 @@ plot(apply(bed.noTMM,2,mean),librarysize)
 
 dev.off()
 LIBRARYSIZE=log(y$samples[,"lib.size"])
-
+source("../../RNAseq/src/find_unexpressed_gene.r")
 source("../../ATACseq/src/remove_problemsample.r")
 
 ## Do timeseries analysis separately for each tissue type and gender and find genes that are increasing/decreasing with age and do pathway enrichment analysis for the identified genes. There are four options :

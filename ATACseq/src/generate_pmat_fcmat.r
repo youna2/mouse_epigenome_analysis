@@ -80,17 +80,19 @@ if(commonpattern)
 
 for(i in 1:length(utissue))
   {
-    if(tid==9) meanexp=cbind(meanexp,rowMeans(bed[,tissue0==utissue[i] & type0=="B6"]))
+#    if(tid==9) meanexp=cbind(meanexp,rowMeans(bed[,tissue0==utissue[i] & type0=="B6"]))
     
-    if(tid==10) meanexp=cbind(meanexp,rowMeans(bed[,tissue0==utissue[i] & type0=="NZO"]))
+#    if(tid==10) meanexp=cbind(meanexp,rowMeans(bed[,tissue0==utissue[i] & type0=="NZO"]))
     
     y=y0[,tissue0==utissue[i]]
     age=age0[tissue0==utissue[i]]
     gender=gender0[tissue0==utissue[i]]
     type=type0[tissue0==utissue[i]]
     librarysize=librarysize0[tissue0==utissue[i]]
+
     
-    if(length(unique(age[type=="B6"]))>1 & length(unique(age[type=="NZO"]))>1)
+#    if(length(unique(age[type=="B6"]))>1 & length(unique(age[type=="NZO"]))>1)
+    if(TRUE)
       {
 ### Do differential or common analysis between NZO and B6
 
@@ -101,10 +103,19 @@ for(i in 1:length(utissue))
 
         sel=which(atac.glmtop.strain[,"FDR"]<p.cutoff)
 #        write.table(cbind(annotation[ sel,"Entrez.ID"],NA,atac.glmtop.strain[sel,"logFC"]),file=paste(topgene,paste(utissue[i],int.or.slope),".txt",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
+
+
+
+        meanexp=cbind(meanexp,atac.glmtop.strain[,"logCPM"])
+        
+
+
         
 #### draw heatmap of age-increasing/decreasing peaks or genes  #################
             atac.glmtop=atac.glmtop.strain
 
+        if(sum(strsplit(getwd(),"/")[[1]]=="ATACseq")==1 )
+          {
 
         if(tid==9)
           {
@@ -118,7 +129,10 @@ for(i in 1:length(utissue))
             write.table(annotation.orig[atac.glmtop[,"FDR"]<0.05 & atac.glmtop[,"logFC"]>0  ,1:3],file=paste("diffpeak_pos_NZO_",utissue[i],".bed",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
             write.table(annotation.orig[atac.glmtop[,"FDR"]<0.05 & atac.glmtop[,"logFC"]<0  ,1:3],file=paste("diffpeak_neg_NZO_",utissue[i],".bed",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
           }  
+      }
 
+        if(tid==9) write.table(cbind(annotation.orig,atac.glmtop),file=paste("supplementary_B6_FDR_FC_",utissue[i],".txt",sep=""),quote=F,row.names=F,sep="\t")
+        if(tid==10) write.table(cbind(annotation.orig,atac.glmtop),file=paste("supplementary_NZO_FDR_FC_",utissue[i],".txt",sep=""),quote=F,row.names=F,sep="\t")
         p.mat.strain=cbind(p.mat.strain,atac.glmtop[,"FDR"])
         fc.mat.strain=cbind(fc.mat.strain,atac.glmtop[,"logFC"])
 
@@ -173,7 +187,7 @@ for(i in 1:length(utissue))
           
       }
   }
-save(annotation.orig,meanexp,p.mat.strain,fc.mat.strain,file=paste("pmat_fcmat_",int.or.slope,"_before_filtering.Rdata",sep=""))
+save(atac.glmtop,annotation.orig,meanexp,p.mat.strain,fc.mat.strain,file=paste("pmat_fcmat_",int.or.slope,"_before_filtering.Rdata",sep=""))
 
 print("dim bed, Y, annotation, pmat before")
 print(dim(bed))
@@ -192,7 +206,7 @@ if(sum(strsplit(getwd(),"/")[[1]]=="ATACseq")==1 )
     if(tid==9 | tid==10) meanexp=cbind(meanexp[selectgene,])
   }
 
-save(meanexp,p.mat.strain,fc.mat.strain,file=paste("pmat_fcmat_",int.or.slope,".Rdata",sep=""))
+save(annotation,meanexp,p.mat.strain,fc.mat.strain,file=paste("pmat_fcmat_",int.or.slope,".Rdata",sep=""))
 
 dev.off()
 print("dim bed, Y, annotation, pmat after (only ATAC change)")

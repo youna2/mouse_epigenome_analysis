@@ -1,5 +1,9 @@
+library(ggplot2)
+source("../../ATACseq/src/library_function.r")
+load("../results/pathwaytitle.Rdata")
 number=vector("list",10)
-barplot.all=balloonplot.all=vector("list",4)
+barplot.all=vector("list",4)
+balloonplot.all=vector("list",25)
 tissue=c("BM","spleen","PBL","memory","naive")
 
 for(BTID in 2:5)
@@ -19,10 +23,13 @@ for(BTID in 2:5)
           number[[i]]=rbind(number[[i]],total.number.plot[[i]][[1]])
       }
     
-    for(i in 1:4)
+    for(i in 1:length(balloonplot))
       {
         if(!is.null(balloonplot[[i]]))
           balloonplot.all[[i]]=rbind(balloonplot.all[[i]],balloonplot[[i]])
+      }
+    for(i in 1:length(barplot))
+      {
         if(!is.null(barplot[[i]]))
           barplot.all[[i]]=rbind(barplot.all[[i]],barplot[[i]][barplot[[i]][,5]!="CD8.memory" & barplot[[i]][,5]!="CD8.naive",])
 
@@ -31,13 +38,13 @@ for(BTID in 2:5)
 
 balloonplot=balloonplot.all
 barplot=barplot.all
-pdf(file="../../ATACseq/results/summary_pathwayplot.pdf",height=17,width=10)
-plot.balloonplot.mouse(balloonplot)    
-draw.barplot(barplot)
-diff.peaks()
-dev.off()
+#pdf(file="../../ATACseq/results/summary_pathwayplot.pdf",height=17,width=10)
+#plot.balloonplot.mouse(balloonplot)    
+#draw.barplot(barplot)
+#diff.peaks()
+#dev.off()
 
-save(balloonplot,barplot,file="../../ATACseq/results/balloonplotATAC.Rdata")
+save(balloonplot,barplot,file="../../ATACseq/results/balloonplot.Rdata")
 ylimmax=15000
 YLIM=c(-ylimmax,ylimmax)
 int.or.slope=c("","","slope","intercept","B6 vs NZO common","B6 vs NZO opposite","only NZO significant","only B6 significant","within B6","within NZO")

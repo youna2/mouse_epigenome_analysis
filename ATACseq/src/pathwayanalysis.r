@@ -11,20 +11,45 @@ setwd("../results")
 previous.dir=getwd()
 
 fdr.cutoff=0.1
-all.path.res=all.path.res2=vector("list",4)
-for(pathwaytype in 1:2)
-  {
-    if(pathwaytype==1)
-      {
-        immunemodule=FALSE
-        celltype.annotation=TRUE
-      }else{
-        immunemodule=TRUE
-        celltype.annotation=FALSE
-      }
+all.path.res=all.path.res2=vector("list",25)
 
-    enrichpath=nopath=enrichpath.wiki=enrichpath.kegg=vector("list",3)
-    for(i in 1:3) enrichpath[[i]]=nopath[[i]]=enrichpath.wiki[[i]]=enrichpath.kegg[[i]]=vector("list",length(tissue.gender.type))
+for(pathwaytype in 1:7)
+  {
+     immunemodule=celltype.annotation=celltype.annotation2=celltype.annotation3=celltype.annotation4=celltype.annotation5=celltype.annotation6=FALSE
+    if(pathwaytype==1)
+      celltype.annotation=TRUE
+      
+    if(pathwaytype==2)
+      immunemodule=TRUE
+
+    if(pathwaytype==3)
+      celltype.annotation2=TRUE
+  
+    if(pathwaytype==4)
+      celltype.annotation3=TRUE
+  
+    if(pathwaytype==5)
+      celltype.annotation4=TRUE
+  
+    if(pathwaytype==6)
+      celltype.annotation5=TRUE
+
+    if(pathwaytype==7)
+      celltype.annotation6=TRUE
+
+    if(pathwaytype==2)
+      {
+        enrichpath.wiki=vector("list",18)
+        for(count in 1:length(enrichpath.wiki))
+          {
+            enrichpath.wiki[[count]]=vector("list",3)
+            for(i in 1:3)
+              enrichpath.wiki[[count]][[i]]=vector("list",length(tissue.gender.type))
+          }
+      }
+    
+    enrichpath=nopath=vector("list",3)
+    for(i in 1:3) enrichpath[[i]]=nopath[[i]]=vector("list",length(tissue.gender.type))
     
     for(N in 2:3)
       {
@@ -54,5 +79,8 @@ for(pathwaytype in 1:2)
     all.path.res[[pathwaytype]]=enrichpath
     all.path.res2[[pathwaytype]]=nopath
   }
-all.path.res[[3]]=enrichpath.wiki
-all.path.res[[4]]=enrichpath.kegg
+
+for(count in 1:length(enrichpath.wiki))
+all.path.res[[count+7]]=enrichpath.wiki[[count]]
+
+

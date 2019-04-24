@@ -1,7 +1,12 @@
 coef.heatmap <- function(x,title)
   {
     MAX=max(abs(-sign(x)*log(abs(x))),na.rm=T)+1;breaksList = seq(-MAX, MAX, by = 1)
-    pheatmap(-sign(x)*log(abs(x)),cluster_cols = FALSE,cluster_rows = FALSE,scale="none",main=title,color = colorRampPalette(c("blue","white","red"))(length(breaksList)),breaks = breaksList)
+
+    txt=matrix("",nr=nrow(x),nc=ncol(x))
+    txt[,1:2][p.adjust(abs(x[,1:2]),"fdr")<0.05]="*"
+    txt[,3][p.adjust(abs(x[,3]),"fdr")<0.05]="*"
+    
+    pheatmap(-sign(x)*log(abs(x)),cluster_cols = FALSE,cluster_rows = FALSE,scale="none",main=title,color = colorRampPalette(c("blue","white","red"))(length(breaksList)),breaks = breaksList,display_numbers=txt)
 }
 
 multiplot <- function(..., plotlist=NULL, file, cols=1, layout=NULL) {

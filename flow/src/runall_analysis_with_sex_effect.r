@@ -11,13 +11,10 @@ flow[,4]=round(as.numeric(flow[,4])*7/30)
 flow[flow[,4]==13,4]=12
 flow[flow[,4]==17,4]=18
 flow=flow[flow[,"tissue"]!="BM",]
-colnames(flow)[colnames(flow)=="B.Viable"]="B"
-colnames(flow)[colnames(flow)=="CD4.Viable"]="CD4"
-colnames(flow)[colnames(flow)=="CD8.Viable"]="CD8"
+
 ### get rid of problematic middle age samples
 flow=flow[flow[,"age"]!=6 ,]
-### get rid of CD38 and percentage of viable cells ###
-flow=flow[,-c(9:11,31:41,53:56)]
+
 meta=flow[,1:5]
 colnames(meta)=c("TISSUE","STRAIN","GENDER","AGE","SAMPLEID")
 dat=as.matrix(flow[,-(1:5)])
@@ -29,6 +26,10 @@ PlotPVCA(res, "")
 PCA(t(dat[rowSums(is.na(dat))==0,]),meta[rowSums(is.na(dat))==0,1:4])
 dev.off()
 #### 3. Start analysis ###################
+colnames(dat)[26:36]
+colnames(dat)[48:51]
+dat=dat[,-c(26:36,48:51)]
+colSums(is.na(dat))
 bed=t(dat[rowSums(is.na(dat))==0,])
 bed=bed[-(1:3),]
 meta=meta[rowSums(is.na(dat))==0,]
@@ -46,8 +47,8 @@ dat=as.data.frame(flow)
 for(i in c(4,6:ncol(dat))) dat[,i]=as.numeric(as.matrix(dat[,i]))
 
 
-dat$CD4.CD8.ratio=as.numeric(flow[,"CD4"])/as.numeric(flow[,"CD8"])
-#dat$CD4.CD8.Lymphocytes.ratio=as.numeric(flow[,"CD4.Lymphocytes"])/as.numeric(flow[,"CD8.Lymphocytes"])
+dat$CD4.CD8.ratio=as.numeric(flow[,"CD4.Viable"])/as.numeric(flow[,"CD8.Viable"])
+dat$CD4.CD8.Lymphocytes.ratio=as.numeric(flow[,"CD4.Lymphocytes"])/as.numeric(flow[,"CD8.Lymphocytes"])
 #dat$CD4.Naive.EMRA=as.numeric(flow[,"CD4.Naive"])+as.numeric(flow[,"CD4.EMRA"])
 #dat$CD8.Naive.EMRA=as.numeric(flow[,"CD8.Naive"])+as.numeric(flow[,"CD8.EMRA"])
 
@@ -62,12 +63,14 @@ convert.numeric <- function(x)
     return(x)
   }
 
-pdf(file="../results/global_flow_plot_problem_samples_removed.pdf",width=15,height=12)
+pdf(file="../results/global_flow_plot_problem_samples_removed.pdf",width=15,height=15)
 
 dat0=dat
 dat0$new=paste(convert.numeric(dat0$age),as.character(dat0$Sample),sep="-")
-dat0$new=(dat0$age)
-
+dat0$new=factor(dat0$age)
+dat0$B=dat0$B.Lymphocytes
+dat0$CD4=dat0$CD4.Lymphocytes
+dat0$CD8=dat0$CD8.Lymphocytes
 
 dat0=dat0[dat0[,"tissue"]!="BM",]
 
@@ -87,32 +90,6 @@ dat0=dat0[dat0[,"tissue"]!="BM",]
 #ggdf <- melt(dat0,id.vars = c("tissue","type", "Sex","new"),measure.vars=c("B.Viable","CD4.Viable","CD8.Viable"))
 #subplot(ggdf)
 
-
-subplot.by.tissue <- function(dat0,subset,title,seltissue)
-  {
-    tmp=cbind("All",dat0[,c("tissue","type","Sex","age",subset ,"new")])
-    names(tmp)[1]="category"
-    tmp2=cbind("IL7R+",dat0[,c("tissue","type","Sex","age",paste("IL7R",subset,sep=".") ,"new")])
-    tmp3=cbind("PD1+",dat0[,c("tissue","type","Sex","age",paste("PD1",subset,sep=".") ,"new")])
-    names(tmp2)=names(tmp3)=names(tmp)
-    tmp=rbind(tmp,tmp2,tmp3)
-    tmp=tmp[tmp$tissue==seltissue,]
-    tmp$tissue=tmp$category
-    ggdf <- melt(tmp,id.vars = c("tissue","type", "Sex","new"),measure.vars=subset)
-    p1=subplot(ggdf,title)
-    return(p1)
-  }
-
-
-p1=subplot.by.tissue(dat0,c( "B","CD4","CD8"),"Percentage of major cell types in PBL","PBL")
-p2=subplot.by.tissue(dat0,c( "CD4.Naive","CD4.CM","CD4.EM","CD4.EMRA"),"Percentage of CD4 T cells in PBL","PBL")
-p3=subplot.by.tissue(dat0,c( "CD8.Naive","CD8.CM","CD8.EM","CD8.EMRA"),"Percentage of CD8 T cells in PBL","PBL")
-
-p4=subplot.by.tissue(dat0,c( "B","CD4","CD8"),"Percentage of major cell types in spleen","spleen")
-p5=subplot.by.tissue(dat0,c( "CD4.Naive","CD4.CM","CD4.EM","CD4.EMRA"),"Percentage of CD4 T cells in spleen","spleen")
-p6=subplot.by.tissue(dat0,c( "CD8.Naive","CD8.CM","CD8.EM","CD8.EMRA"),"Percentage of CD8 T cells in spleen","spleen")
-
-multiplot(p1,p4,p2,p5,p3,p6,cols=3)
 
 ggdf <- melt(dat0,id.vars = c("tissue","type", "Sex","new"),measure.vars=c("B","CD4","CD8"))
 p1=subplot(ggdf,"(A) percentage of sorted T cells")
@@ -168,25 +145,23 @@ p8=subplot4(ggdf,"PD1","")
 ggdf <- melt(dat0,id.vars = c("tissue","type", "Sex","new"),measure.vars=c( "PD1.CD8.Naive", "PD1.CD8.CM", "PD1.CD8.EM", "PD1.CD8.EMRA"  ))
 p9=subplot4(ggdf,"PD1","")
     
-#multiplot(p1,p4,p7,p2,p5,p8,p3,p6,p9,cols=3)
+multiplot(p1,p4,p7,p2,p5,p8,p3,p6,p9,cols=3)
 dev.off()
 
 
 orig.dat=dat
 
-
-pdf(file="../results/flow_plot_problem_samples_removed.pdf",width=3)
 for(analyze.spleen in c(TRUE,FALSE))
   {
 
 if(analyze.spleen)
   {
     dat=orig.dat[orig.dat[,"tissue"]=="spleen",]
-
+    pdf(file="../results/flow_plot_SPL_problem_samples_removed.pdf")
   }else
 {
   dat=orig.dat[orig.dat[,"tissue"]=="PBL",]
-
+  pdf(file="../results/flow_plot_PBL_problem_samples_removed.pdf")
 }
 
 
@@ -235,48 +210,48 @@ if(TRANSFORM) for(i in 6:ncol(dat)) dat[,i]=transform(as.numeric(as.matrix(dat[,
 ##### investigate effect of gender and strain on aging pattern #####
 ### test if the intercept and slope for aging effect is different between gender and strain ### For the column "M-F in B6” , 1 means slope/intercept for male is larger than female, -1 means the opposite and blank means that there is no significant difference
 
-temp=summary(lm(dat[,6]~dat$age*dat$type))$coef
+temp=summary(lm(dat[,6]~dat$age*dat$Sex*dat$type))$coef
 percent.vs.type.interaction.coef=percent.vs.type.interaction.p=matrix(NA,nr=ncol(dat)-5,nc=nrow(temp))
 colnames(percent.vs.type.interaction.coef)=colnames(percent.vs.type.interaction.p)=rownames(temp)
 for(i in 6:ncol(dat))
   {
-    temp=signif(summary(lm(dat[,i]~dat$age*dat$type))$coef[,1],2)
+    temp=signif(summary(lm(dat[,i]~dat$age*dat$Sex*dat$type))$coef[,1],2)
     percent.vs.type.interaction.coef[i-5,names(temp)]=temp
 
-    temp=signif(summary(lm(dat[,i]~dat$age*dat$type))$coef[,4],2)
+    temp=signif(summary(lm(dat[,i]~dat$age*dat$Sex*dat$type))$coef[,4],2)
     percent.vs.type.interaction.p[i-5,names(temp)]=temp
         
   }
 rownames(percent.vs.type.interaction.p)=colnames(dat)[6:ncol(dat)]
 
 
-## tempdat=as.matrix(dat)
-## tempdat[tempdat[,"type"]=="NZO","type"]="ANZO"
-## #tempdat[tempdat[,"Sex"]=="M","Sex"]="AM"
-## tempdat2=dat
-## tempdat2$"type"=tempdat[,"type"]
-## #tempdat2$"Sex"=tempdat[,"Sex"]
-## tempdat=tempdat2
+tempdat=as.matrix(dat)
+tempdat[tempdat[,"type"]=="NZO","type"]="ANZO"
+tempdat[tempdat[,"Sex"]=="M","Sex"]="AM"
+tempdat2=dat
+tempdat2$"type"=tempdat[,"type"]
+tempdat2$"Sex"=tempdat[,"Sex"]
+tempdat=tempdat2
 
 
-## temp=summary(lm(tempdat[,6]~tempdat$age*tempdat$type))$coef
-## percent.vs.type.interaction.coef2=percent.vs.type.interaction.p2=matrix(NA,nr=ncol(dat)-5,nc=nrow(temp))
-## colnames(percent.vs.type.interaction.coef2)=colnames(percent.vs.type.interaction.p2)=rownames(temp)
-## for(i in 6:ncol(dat))
-##   {
-##     temp=signif(summary(lm(tempdat[,i]~tempdat$age*tempdat$type))$coef[,1],2)
-##     percent.vs.type.interaction.coef2[i-5,names(temp)]=temp
+temp=summary(lm(tempdat[,6]~tempdat$age*tempdat$Sex*tempdat$type))$coef
+percent.vs.type.interaction.coef2=percent.vs.type.interaction.p2=matrix(NA,nr=ncol(dat)-5,nc=nrow(temp))
+colnames(percent.vs.type.interaction.coef2)=colnames(percent.vs.type.interaction.p2)=rownames(temp)
+for(i in 6:ncol(dat))
+  {
+    temp=signif(summary(lm(tempdat[,i]~tempdat$age*tempdat$Sex*tempdat$type))$coef[,1],2)
+    percent.vs.type.interaction.coef2[i-5,names(temp)]=temp
 
-##     temp=signif(summary(lm(tempdat[,i]~tempdat$age*tempdat$type))$coef[,4],2)
-##     percent.vs.type.interaction.p2[i-5,names(temp)]=temp        
-##   }
-## rownames(percent.vs.type.interaction.p2)=colnames(dat)[6:ncol(dat)]
+    temp=signif(summary(lm(tempdat[,i]~tempdat$age*tempdat$Sex*tempdat$type))$coef[,4],2)
+    percent.vs.type.interaction.p2[i-5,names(temp)]=temp        
+  }
+rownames(percent.vs.type.interaction.p2)=colnames(dat)[6:ncol(dat)]
 
                 
 
 
 ### variables that have significant interaction 
- temp=rowSums(percent.vs.type.interaction.p[,c("dat$typeNZO","dat$age:dat$typeNZO")]<0.005)>0
+ temp=rowSums(percent.vs.type.interaction.p[,c("dat$SexM","dat$typeNZO","dat$age:dat$SexM","dat$age:dat$typeNZO","dat$age:dat$SexM:dat$typeNZO")]<0.005)>0
  sel=percent.vs.type.interaction.p[temp,1]
 # dat0=dat[,c( "tissue","type","Sex","age","Sample", sel )]
 dat0=dat
@@ -289,22 +264,22 @@ dat0=dat
     datNZO=dat0[dat0$type=="NZO",]
    
 
-    ## datFB6=dat0[dat0$Sex=="F"& dat0$type=="B6",]
-    ## datMNZO=dat0[dat0$Sex=="M"&dat0$type=="NZO",]
+    datFB6=dat0[dat0$Sex=="F"& dat0$type=="B6",]
+    datMNZO=dat0[dat0$Sex=="M"&dat0$type=="NZO",]
 
-    ## datFNZO=dat0[dat0$Sex=="F"& dat0$type=="NZO",]
-    ## datMB6=dat0[dat0$Sex=="M"&dat0$type=="B6",]
+    datFNZO=dat0[dat0$Sex=="F"& dat0$type=="NZO",]
+    datMB6=dat0[dat0$Sex=="M"&dat0$type=="B6",]
 
 
-#     plotting3(dat0,datB6,datNZO)
+    plotting2(dat0,datMB6,datMNZO,datFB6,datFNZO)
     
 
 #### fits regression
 
-## R1=regression(datFB6)
-## R2=regression(datMB6)
-## R3=regression(datFNZO)
-## R4=regression(datMNZO)
+R1=regression(datFB6)
+R2=regression(datMB6)
+R3=regression(datFNZO)
+R4=regression(datMNZO)
 
 R5=regression(datB6)
 R6=regression(datNZO)
@@ -318,128 +293,76 @@ if(analyze.spleen)
   }
 
 
-## percent.vs.type.interaction.p= cbind(percent.vs.type.interaction.p2,percent.vs.type.interaction.p)
-## percent.vs.type.interaction.coef= cbind(percent.vs.type.interaction.coef2,percent.vs.type.interaction.coef)
+percent.vs.type.interaction.p= cbind(percent.vs.type.interaction.p2,percent.vs.type.interaction.p)
+percent.vs.type.interaction.coef= cbind(percent.vs.type.interaction.coef2,percent.vs.type.interaction.coef)
 
 
 ### test if the intercept and slope for aging effect is different between gender and strain. For the column "M-F in B6” , 1 means slope/intercept for male is larger than female, -1 means the opposite and blank means that there is no significant difference
 
 cd38var=c( "CD38.B", "CD38.CD4", "CD38.CD8", "CD38.CD4.Naive", "CD38.CD4.CM" , "CD38.CD4.EM" , "CD38.CD4.EMRA", "CD38.CD8.Naive", "CD38.CD8.CM" , "CD38.CD8.EM" ,  "CD38.CD8.EMRA" )
 
-## var=c("dat$typeNZO")
-## x=sign(percent.vs.type.interaction.coef[,var])*percent.vs.type.interaction.p[,var]
-
-## colnames(x)=c("NZO-B6")
-## rownames(x)=rownames(R5)
-## #if(!analyze.spleen) x[cd38var,-1]=1
-
-## x=x[c(4:6,53,7:47),]
-## MAX=max(abs(-sign(x)*log(abs(x))),na.rm=T);breaksList = seq(-MAX, MAX, by = 1)
-## pheatmap(-sign(x)*log(abs(x)),cluster_cols = FALSE,cluster_rows = FALSE,scale="none",main="Difference of intercepts",color = colorRampPalette(c("blue","white","red"))(length(breaksList)),breaks = breaksList)
-## y=sign(x)*pvalue.convert(abs(x))
-## y[y==0]=""
-## if(analyze.spleen)
-##   {
-##     write.csv(y,file="../results/difference_of_intercept_SPL.csv",quote=F)
-##   } else
-## {
-##   write.csv(y,file="../results/difference_of_intercept_PBL.csv",quote=F)
-## }
-
-
-
-maineffect.coef=cbind(R5[,"aging_coef"],R6[,"aging_coef"])
-maineffect.p=cbind(R5[,"aging_p"],R6[,"aging_p"])
-x=sign(maineffect.coef)*maineffect.p
-colnames(x)=c("B6","NZO")
-x0=x
-
-
-var=c("dat$age:dat$typeNZO")
-
+var=c("dat$SexM","tempdat$SexF","dat$typeNZO","tempdat$typeB6")
 x=sign(percent.vs.type.interaction.coef[,var])*percent.vs.type.interaction.p[,var]
-#x[,c(2,4)]= -x[,c(2,4)]
-x=cbind(x)
-colnames(x)=c("NZO-B6")
-
-x=cbind(x0,x)
+x[,c(2,4)]= -x[,c(2,4)]
+colnames(x)=c("M-F in B6","M-F in NZO","NZO-B6 in F","NZO-B6 in M")
+rownames(x)=rownames(R1)
 #if(!analyze.spleen) x[cd38var,-1]=1
 
-coef.heatmap(x[c(1:3,4:(nrow(x)-1)),1:3],paste("Change with aging in",dat[1,"tissue"]))
-
-## y=sign(x)*pvalue.convert(abs(x))
-## y[y==0]=""
-
-
-## if(analyze.spleen) write.csv(y,file="../results/difference_of_slope_SPL.csv",quote=F) else write.csv(y,file="../results/difference_of_slope_PBL.csv",quote=F)
-
+x=x[c(4:6,53,7:47),]
+MAX=max(abs(-sign(x)*log(abs(x))),na.rm=T);breaksList = seq(-MAX, MAX, by = 1)
+pheatmap(-sign(x)*log(abs(x)),cluster_cols = FALSE,cluster_rows = FALSE,scale="none",main="Difference of intercepts",color = colorRampPalette(c("blue","white","red"))(length(breaksList)),breaks = breaksList)
+y=sign(x)*pvalue.convert(abs(x))
+y[y==0]=""
+if(analyze.spleen)
+  {
+    write.csv(y,file="../results/difference_of_intercept_SPL.csv",quote=F)
+  } else
+{
+  write.csv(y,file="../results/difference_of_intercept_PBL.csv",quote=F)
 }
+
+
+
+maineffect.coef=cbind(R1[,"aging_coef"],R2[,"aging_coef"],R3[,"aging_coef"],R4[,"aging_coef"])
+maineffect.p=cbind(R1[,"aging_p"],R2[,"aging_p"],R3[,"aging_p"],R4[,"aging_p"])
+x=sign(maineffect.coef)*maineffect.p
+colnames(x)=c("F in B6","M in B6","F in NZO","M in NZO")
+
+coef.heatmap(x[c(4:6,53,7:47),],"Slope with aging")
+
+var=c("dat$age:dat$SexM","tempdat$age:tempdat$SexF" ,"dat$age:dat$typeNZO","tempdat$age:tempdat$typeB6")
+
+x=sign(percent.vs.type.interaction.coef[,var])*percent.vs.type.interaction.p[,var]
+x[,c(2,4)]= -x[,c(2,4)]
+colnames(x)=c("M-F in B6","M-F in NZO","NZO-B6 in F","NZO-B6 in M")
+rownames(x)=rownames(R1)
+#if(!analyze.spleen) x[cd38var,-1]=1
+
+coef.heatmap(x[c(4:6,53,7:47),],"Difference of slopes")
+y=sign(x)*pvalue.convert(abs(x))
+y[y==0]=""
+
+
+if(analyze.spleen) write.csv(y,file="../results/difference_of_slope_SPL.csv",quote=F) else write.csv(y,file="../results/difference_of_slope_PBL.csv",quote=F)
 
 dev.off()
 
-ggpoint <- function(x,y,xl,yl,title)
-  {
-temp=cor.test(x,y)
-minx=min(x,na.rm=T)+0.5
-maxy=max(y,na.rm=T)
-dat=data.frame(x=x,y=y,type=names(x))
-p <- ggplot(dat, aes(x,y,color=type))+ geom_point()+labs(x=xl,y=yl,title=title)+annotate("text", label = paste("r=",signif(temp$estimate,2)), x = minx, y = maxy, size = 5, colour = "red")+theme(legend.text=element_text(size=7))+geom_vline(xintercept=0,size=0.3)+geom_hline(yintercept=0,size=0.3)
-return(p)
 }
 
 
+ggpoint <- function(x,y,xl,yl,title)
+  {
+dat=data.frame(x=x,y=y,col=names(x))
+p <- ggplot(dat, aes(x,y,color=col))+ geom_point()+labs(x=xl,y=yl,title=title)
+return(p)
+}
 pdf(file="../results/FC_comparison_flow.pdf",width=10)
-
-c1=c2=NULL
-major.cell.id=1:11
-major.cell.id=4:7
-major.cell.id=8:11
-sel=major.cell.id
+sel=4:14
 x1=ggpoint(B6.spleen[sel,"aging_coef"],NZO.spleen[sel,"aging_coef"],"B6","NZO","spleen")
 x2=ggpoint(B6.PBL[sel,"aging_coef"],NZO.PBL[sel,"aging_coef"],"B6","NZO","PBL")
 x3=ggpoint(B6.spleen[sel,"aging_coef"],B6.PBL[sel,"aging_coef"],"spleen","PBL","B6")
 x4=ggpoint(NZO.spleen[sel,"aging_coef"],NZO.PBL[sel,"aging_coef"],"spleen","PBL","NZO")
 multiplot(x1,x2,x3,x4,cols=2)
-
-c1=c(c1,cor(B6.spleen[sel,"aging_coef"],NZO.spleen[sel,"aging_coef"]),cor(B6.PBL[sel,"aging_coef"],NZO.PBL[sel,"aging_coef"]))
-c2=c(c2,cor(B6.spleen[sel,"aging_coef"],B6.PBL[sel,"aging_coef"]),cor(NZO.spleen[sel,"aging_coef"],NZO.PBL[sel,"aging_coef"]))
-
-
-sel=major.cell.id+11
-x1=ggpoint(B6.spleen[sel,"aging_coef"],NZO.spleen[sel,"aging_coef"],"B6","NZO","spleen")
-x2=ggpoint(B6.PBL[sel,"aging_coef"],NZO.PBL[sel,"aging_coef"],"B6","NZO","PBL")
-x3=ggpoint(B6.spleen[sel,"aging_coef"],B6.PBL[sel,"aging_coef"],"spleen","PBL","B6")
-x4=ggpoint(NZO.spleen[sel,"aging_coef"],NZO.PBL[sel,"aging_coef"],"spleen","PBL","NZO")
-multiplot(x1,x2,x3,x4,cols=2)
-
-c1=c(c1,cor(B6.spleen[sel,"aging_coef"],NZO.spleen[sel,"aging_coef"]),cor(B6.PBL[sel,"aging_coef"],NZO.PBL[sel,"aging_coef"]))
-c2=c(c2,cor(B6.spleen[sel,"aging_coef"],B6.PBL[sel,"aging_coef"]),cor(NZO.spleen[sel,"aging_coef"],NZO.PBL[sel,"aging_coef"]))
-
-
-sel=major.cell.id+22
-x1=ggpoint(B6.spleen[sel,"aging_coef"],NZO.spleen[sel,"aging_coef"],"B6","NZO","spleen")
-x2=ggpoint(B6.PBL[sel,"aging_coef"],NZO.PBL[sel,"aging_coef"],"B6","NZO","PBL")
-x3=ggpoint(B6.spleen[sel,"aging_coef"],B6.PBL[sel,"aging_coef"],"spleen","PBL","B6")
-x4=ggpoint(NZO.spleen[sel,"aging_coef"],NZO.PBL[sel,"aging_coef"],"spleen","PBL","NZO")
-multiplot(x1,x2,x3,x4,cols=2)
-
-c1=c(c1,cor(B6.spleen[sel,"aging_coef"],NZO.spleen[sel,"aging_coef"]),cor(B6.PBL[sel,"aging_coef"],NZO.PBL[sel,"aging_coef"]))
-c2=c(c2,cor(B6.spleen[sel,"aging_coef"],B6.PBL[sel,"aging_coef"]),cor(NZO.spleen[sel,"aging_coef"],NZO.PBL[sel,"aging_coef"]))
-
-
-type=rep(c("All","IL7R+","PD1+"),each=2)
-c1name=rep(c("spleen","PBL"),3)
-c2name=rep(c("B6","NZO"),3)
-
-
-df=data.frame(type=type,tissue=c1name,Correlation=c1 )
-p1=ggplot(data=df, aes(x=type, y=Correlation, fill=tissue)) +  geom_bar(stat="identity", position=position_dodge())+  theme_minimal()+ggtitle("B6 vs. NZO")+coord_flip()+labs(x="")+ scale_fill_manual(  values=c("PBL"="red","spleen"= "blue"))+ scale_x_discrete(limits = rev(levels(factor(type))))
-
-
-df=data.frame(type=type,strain=c2name,Correlation=c2 )
-p2=ggplot(data=df, aes(x=type, y=Correlation, fill=strain)) +  geom_bar(stat="identity", position=position_dodge())+   theme_minimal()+ggtitle("PBL vs. spleen")+coord_flip()+ylim(0,1)+labs(x="")+ scale_x_discrete(limits = rev(levels(factor(type))))
-
-multiplot(p1,NA,NA,p2,NA,NA,NA,NA,cols=3)
-
+sel=15:47
 dev.off()
 

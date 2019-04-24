@@ -46,27 +46,61 @@ plot.correlationplot <- function(x,y,title,xlab,ylab)
     return(y)
   }
 
+msigdbsel <- function(x)
+  {
+    sel=rep(TRUE,length(x))
+    for(i in 1:length(x))
+      {
+        tmp=strsplit(x[i],"")[[1]]
+        if(sum(tmp=="$")>0 | mean(tmp[1:3]==c("c","h","r"))==1 | mean(tmp[1:2]==c("G","O"))==1) sel[i]=FALSE
+      }
+    return(sel)
+  }
 
 plot.balloonplot.mouse <- function(balloonplot)
   {
-
-    for(i in 1:3)
+                                       
+     for(i in c(1:8,16,18,19,25))
+#    for(i in 1:length(balloonplot))
       {
         multiballoonplot=vector("list",4)
     
-        for(j in 1:3)
+        for(j in 1:4)
           {
             pathwaymat=balloonplot[[i]]
-
-            if(i==3)
+            pathwaymat[pathwaymat[,5]=="human",4]="PBMC"
+            
+            if(i<8)
               {
-                pathwaymat=pathwaymat[as.numeric(pathwaymat[,2])<10^(-5),]
+                pathwaymat=rbind(pathwaymat[pathwaymat[,4]!="CD8.memory" &pathwaymat[,4]!="CD8.naive" ,])
+              }else{
+            if(i>=3)       pathwaymat=rbind(pathwaymat[as.numeric(pathwaymat[,2])<10^(-3),])
+
+            if(RNA)
+              {
+            if(pathwaytitle[i]=="kegg"|pathwaytitle[i]=="wikipathways") pathwaymat=rbind(pathwaymat[as.numeric(pathwaymat[,2])<10^(-8),]) 
+
+            if(pathwaytitle[i]=="molecular_function") pathwaymat=rbind(pathwaymat[as.numeric(pathwaymat[,2])<10^(-15),]) 
+
+            if(pathwaytitle[i]=="msigdb"){pathwaymat=pathwaymat[msigdbsel(pathwaymat[,1]),]; pathwaymat=rbind(pathwaymat[as.numeric(pathwaymat[,2])<10^(-55),])}
+
+            if(pathwaytitle[i]=="reactome") pathwaymat=rbind(pathwaymat[as.numeric(pathwaymat[,2])<10^(-45),])
+          }else{
+            if(pathwaytitle[i]=="kegg"|pathwaytitle[i]=="wikipathways") pathwaymat=rbind(pathwaymat[as.numeric(pathwaymat[,2])<10^(-6),]) 
+
+            if(pathwaytitle[i]=="molecular_function") pathwaymat=rbind(pathwaymat[as.numeric(pathwaymat[,2])<10^(-12),]) 
+
+            if(pathwaytitle[i]=="msigdb") {pathwaymat=pathwaymat[msigdbsel(pathwaymat[,1]),];pathwaymat=rbind(pathwaymat[as.numeric(pathwaymat[,2])<10^(-28),])}
+
+            if(pathwaytitle[i]=="reactome") pathwaymat=rbind(pathwaymat[as.numeric(pathwaymat[,2])<10^(-32),])
+          }
+    
+            
      #           pathwaymat=pathwaymat[pathwaymat[,4]=="CD8.memory" | pathwaymat[,4]=="CD8.naive" ,]
               }
-        
-            if(i!=3) pathwaymat=pathwaymat[pathwaymat[,4]!="CD8.memory" &pathwaymat[,4]!="CD8.naive" ,]
+
             
-            if(j ==1) sel=pathwaymat[,5]=="within NZO" | pathwaymat[,5]=="within B6"
+            if(j ==1) sel=pathwaymat[,5]=="within NZO" | pathwaymat[,5]=="within B6" | pathwaymat[,5]=="human"
 
             if(j ==2) sel=pathwaymat[,5]=="B6 vs NZO common" | pathwaymat[,5]=="B6 vs NZO opposite"
             if(j ==3) sel=pathwaymat[,5]=="only NZO significant" | pathwaymat[,5]=="only B6 significant"
@@ -76,23 +110,26 @@ plot.balloonplot.mouse <- function(balloonplot)
             if(sum(sel)>0)
               {
                 pathwaymat=rbind(pathwaymat[sel,])
-    
+
+                pathwaymat[pathwaymat[,5]=="intercept",5]="more change in B6"
+                pathwaymat[pathwaymat[,5]=="slope",5]="more change in NZO"
+                
                 df=data.frame(pathid=pathwaymat[,1],logp=-log10(as.numeric(pathwaymat[,2])+10^(-30)),direction=(pathwaymat[,3]),tissue=pathwaymat[,4],class=pathwaymat[,5])
 
-                multiballoonplot[[j]]=(ggballoonplot(df, x = "tissue", y = "pathid", size = "logp", fill = "direction" ,facet.by="class",ggtheme = theme_bw()))+scale_fill_manual(values = c("down"="dodgerblue","up"="firebrick1"),guide=guide_legend(title = NULL))# +facet_wrap("class",scales="free_x") #+
+                multiballoonplot[[j]]=(ggballoonplot(df, x = "tissue", y = "pathid", size = "logp", fill = "direction" ,facet.by="class",ggtheme = theme_bw()))+scale_fill_manual(values = c("down"="dodgerblue","up"="firebrick1"),guide=guide_legend(title = NULL))+facet_wrap("class",scales="free_x")+ggtitle(pathwaytitle[i]) #+
 #  scale_fill_viridis_c(option = "C")
               }
           }
 
-#        if(i<3)
-#          {
-            multiplot(multiballoonplot[[1]],multiballoonplot[[2]],multiballoonplot[[3]],multiballoonplot[[4]],col=1)
-      ##     }else{
-      ##       multiplot(multiballoonplot[[1]],multiballoonplot[[2]],col=1);
+      #  if(i<3)
+      #    {
+            multiplot(multiballoonplot[[1]],multiballoonplot[[2]],multiballoonplot[[3]],col=1)
+      #     }else{
+       #      multiplot(multiballoonplot[[1]],multiballoonplot[[2]],multiballoonplot[[3]],col=1);
       ##       print(multiballoonplot[[4]]);
 
-      ## }
-  }
+      # }
+      }
 
 }
 
@@ -134,7 +171,7 @@ module.enrichment.test <- function(human.diff.gene,all.gene,gene.universe)
 print(c("geneuniverse",mean(toupper(human.diff.gene) %in% gene.universe)))
     human.diff.gene=intersect(toupper(human.diff.gene),gene.universe)
                     pathid=unique(all.gene[,1])
-                    pathp=pathno=rep(NA,length(pathid))
+                    pathp=pathno=pathgene=rep(NA,length(pathid))
                     for(i in 1:length(pathid))
                       {
                         path.gene=toupper(all.gene[all.gene[,1]==pathid[i],2])### all genes in pathway i
@@ -152,11 +189,12 @@ print(c("geneuniverse",mean(toupper(human.diff.gene) %in% gene.universe)))
 
                         pathp[i]= 1-phyper(whitepick,white,black,pick)
                         pathno[i]=lintersection
+                        pathgene[i]=paste(intersection,collapse=" ")
 #                        temp=match(intersection,genesV2[,2])
                         
                       }
 
-                    return(list(pathid,pathp,pathno))
+                    return(list(pathid,pathp,pathno,pathgene))
   }
 
 
@@ -351,8 +389,8 @@ write.table(cbind(annotation[ sel,"Entrez.ID"],p.cut,-1),file=paste(topgene,"_al
 diff.peaks <- function()
   {
 ### differential genes for each tissue ####
-
-    p1=p2=vector("list",2)
+    p1=p2=vector("list",4)
+    p.mat=fc.mat=vector("list",2)
     TISSUE=c("BM"," Spleen","PBL","CD8.memory","CD8.naive")
     STRAIN=c("B6","NZO")
     for(k in 1:2)
@@ -360,68 +398,183 @@ diff.peaks <- function()
         df=df2=NULL    
         for(BTID in 2:5)
           {
-        load(paste("../results",BTID,"/pmat_fcmat_within ",STRAIN[k],"_before_filtering.Rdata",sep=""))
-        p.mat=p.mat.strain
-        fc.mat=fc.mat.strain
+            load(paste("../../ATACseq/results",BTID,"/pmat_fcmat_within ",STRAIN[k],"_before_filtering.Rdata",sep=""))
+            p.mat[[k]]=p.mat.strain
+            fc.mat[[k]]=fc.mat.strain
+            
+            temptissue=TISSUE[BTID]
+
+            for(i in 1:ncol(p.mat[[k]]))
+              {
+                                        #        temptissue=colnames(p.mat)[i]
+
+#                sel=which(p.mat[[k]][,i]<0.05)
+                                        #  write.table(cbind(annotation[ sel,"Entrez.ID"],p.mat[sel,i],fc.mat[sel,i]),file=paste(topgene,temptissue,".txt",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
+                
+                tmp=c(nrow(p.mat[[k]]), sum(p.mat[[k]][,i]<0.05& fc.mat[[k]][,i]>0), sum(p.mat[[k]][,i]<0.05& fc.mat[[k]][,i]<0))
+
+                number=c(tmp[1]-sum(tmp[-1]),tmp[-1])
+                tissue=rep(temptissue,length(tmp))
+                direction=c("no change"," up","down")
+                df2=rbind(df2,cbind(tissue,number,direction))
+                
+                sel=which(p.mat[[k]][,i]<0.05 & fc.mat[[k]][,i]>0)
+                if(length(sel)>0) df=rbind(df,cbind(paste(temptissue,"+"), removing.paren(annotation.orig[sel,"Annotation"])))
+                sel=which(p.mat[[k]][,i]<0.05 & fc.mat[[k]][,i]<0)
+                if(length(sel)>0) df=rbind(df,cbind(paste(temptissue,"-"),removing.paren(annotation.orig[sel,"Annotation"])))
+              }
+          }
+        temp=table(df[,1],df[,2])
+        temp=temp/rowSums(temp)*100
+        df=data.frame(tissue=rep(rownames(temp),ncol(temp)),percent=c(temp),annotation=rep(colnames(temp),each=nrow(temp)))
+
+        p1[[k]] <- ggplot(data=df, aes(x=tissue, y=percent, fill=annotation)) +
+          geom_bar(stat="identity")+   scale_fill_brewer(palette = "Set3") +   ylab("Percent") +    ggtitle(paste("Homer annotation of differential peaks in",STRAIN[k]))+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+        df2=as.data.frame(df2)
+        df2$number=as.numeric(as.character(df2$number))
+        
+        p2[[k]] <- ggplot(data=df2, aes(x=tissue, y=number, fill=direction))+geom_bar(stat="identity")+scale_fill_manual(values = c("down"="dodgerblue"," up"="firebrick1","no change"="grey"),guide=guide_legend(title = NULL)) +ggtitle(paste("Number of differential peaks in",STRAIN[k]))+ theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+      }
+#
+    
+    df2=df3=NULL    
+    for(BTID in 2:5)
+      {
+        for(i in 1:2)
+          {
+            load(paste("../results",BTID,"/pmat_fcmat_within ",STRAIN[i],"_before_filtering.Rdata",sep=""))
+            p.mat[[i]]=p.mat.strain
+            fc.mat[[i]]=fc.mat.strain
+          }
         temptissue=TISSUE[BTID]
 
-        for(i in 1:ncol(p.mat))
+        for(i in 1:ncol(p.mat[[1]]))
           {
-#        temptissue=colnames(p.mat)[i]
-
-            sel=which(p.mat[,i]<0.05)
-      #  write.table(cbind(annotation[ sel,"Entrez.ID"],p.mat[sel,i],fc.mat[sel,i]),file=paste(topgene,temptissue,".txt",sep=""),quote=F,row.names=F,col.names=F,sep="\t")
-            
-            tmp=c(nrow(p.mat), sum(p.mat[,i]<0.05& fc.mat[,i]>0), sum(p.mat[,i]<0.05& fc.mat[,i]<0))
+            tmp=c(nrow(p.mat[[1]]), sum(p.mat[[1]][,i]<0.05& fc.mat[[1]][,i]>0&p.mat[[2]][,i]<0.05& fc.mat[[2]][,i]>0), sum(p.mat[[1]][,i]<0.05& fc.mat[[1]][,i]<0&p.mat[[2]][,i]<0.05& fc.mat[[2]][,i]<0))
 
             number=c(tmp[1]-sum(tmp[-1]),tmp[-1])
             tissue=rep(temptissue,length(tmp))
-            diff=c("0","+","-")
-            df2=rbind(df2,cbind(tissue,number,diff))
-            
-            sel=which(p.mat[,i]<0.05 & fc.mat[,i]>0)
-            if(length(sel)>0) df=rbind(df,cbind(paste(temptissue,"+"), removing.paren(annotation.orig[sel,"Annotation"])))
-            sel=which(p.mat[,i]<0.05 & fc.mat[,i]<0)
-            if(length(sel)>0) df=rbind(df,cbind(paste(temptissue,"-"),removing.paren(annotation.orig[sel,"Annotation"])))
+            direction=c("no change"," up","down")
+            df2=rbind(df2,cbind(tissue,number,direction))
 
+
+            tmp=c(nrow(p.mat[[1]]), sum(p.mat[[1]][,i]<0.05& fc.mat[[1]][,i]<0&p.mat[[2]][,i]<0.05& fc.mat[[2]][,i]>0), sum(p.mat[[1]][,i]<0.05& fc.mat[[1]][,i]>0&p.mat[[2]][,i]<0.05& fc.mat[[2]][,i]<0))
+
+            number=c(tmp[1]-sum(tmp[-1]),tmp[-1])
+            tissue=rep(temptissue,length(tmp))
+
+            df3=rbind(df3,cbind(tissue,number,direction))
+            
           }
       }
-    temp=table(df[,1],df[,2])
-    temp=temp/rowSums(temp)*100
-    df=data.frame(tissue=rep(rownames(temp),ncol(temp)),percent=c(temp),annotation=rep(colnames(temp),each=nrow(temp)))
 
-    p1[[k]] <- ggplot(data=df, aes(x=tissue, y=percent, fill=annotation)) +
-      geom_bar(stat="identity")+   scale_fill_brewer(palette = "Set3") +   ylab("Percent") +    ggtitle(paste("Homer annotation of differential peaks in",STRAIN[k]))+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-
-    df2=as.data.frame(df2)
-    df2$number=as.numeric(as.character(df2$number))
-    
-    p2[[k]] <- ggplot(data=df2, aes(x=tissue, y=number, fill=diff))+geom_bar(stat="identity")+ggtitle(paste("Number of differential peaks in",STRAIN[k]))+ theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-  }
-    p <- multiplot(p1[[1]],p2[[1]],p1[[2]],p2[[2]],cols=2)
+        df2=as.data.frame(df2)
+        df2$number=as.numeric(as.character(df2$number))
+        df3=as.data.frame(df3)
+        df3$number=as.numeric(as.character(df3$number))
+        
+        p2[[3]] <- ggplot(data=df2, aes(x=tissue, y=number, fill=direction))+geom_bar(stat="identity")+ggtitle(paste("Number of commonly differential peaks between B6 and NZO" ))+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+scale_fill_manual(values = c("down"="dodgerblue"," up"="firebrick1","no change"="grey"),guide=guide_legend(title = NULL)) 
+        p2[[4]] <- ggplot(data=df3, aes(x=tissue, y=number, fill=direction))+geom_bar(stat="identity")+ggtitle(paste("Number of oppositely differential peaks between B6 and NZO" ))+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+scale_fill_manual(values = c("down"="dodgerblue"," up"="firebrick1","no change"="grey"),guide=guide_legend(title = NULL)) 
+   
+    p <- multiplot(p1[[1]],p2[[1]],p2[[3]],NA,p1[[2]],p2[[2]],p2[[4]],NA,cols=2)
     return(p)
   }
-draw.barplot <- function(barplot)
+
+diff.genes <- function()
+  {
+    df1=df2=df3=df4=NULL    
+    STRAIN=c("B6","NZO")
+    p.mat=fc.mat=vector("list",2)
+    p2=vector("list",4)
+    for(i in 1:2)
+      {
+        load(paste("../../RNAseq/results/pmat_fcmat_within ",STRAIN[i],".Rdata",sep=""))
+        p.mat[[i]]=p.mat.strain
+        fc.mat[[i]]=fc.mat.strain
+      }
+    
+    for(i in 1:ncol(p.mat[[1]]))
+      {
+        temptissue=strsplit(colnames(p.mat[[1]])[i]," ")[[1]][1]
+        tmp=c(nrow(p.mat[[1]]), sum(p.mat[[1]][,i]<0.05& fc.mat[[1]][,i]>0), sum(p.mat[[1]][,i]<0.05& fc.mat[[1]][,i]<0))
+        number=c(tmp[1]-sum(tmp[-1]),tmp[-1])
+        tissue=rep(temptissue,length(tmp))
+        direction=c("no change"," up","down")
+        df1=rbind(df1,cbind(tissue,number,direction))
+ 
+        tmp=c(nrow(p.mat[[2]]), sum(p.mat[[2]][,i]<0.05& fc.mat[[2]][,i]>0), sum(p.mat[[2]][,i]<0.05& fc.mat[[2]][,i]<0))
+        
+        number=c(tmp[1]-sum(tmp[-1]),tmp[-1])
+        tissue=rep(temptissue,length(tmp))
+        
+        df2=rbind(df2,cbind(tissue,number,direction))
+ 
+        
+        tmp=c(nrow(p.mat[[1]]), sum(p.mat[[1]][,i]<0.05& fc.mat[[1]][,i]>0&p.mat[[2]][,i]<0.05& fc.mat[[2]][,i]>0), sum(p.mat[[1]][,i]<0.05& fc.mat[[1]][,i]<0&p.mat[[2]][,i]<0.05& fc.mat[[2]][,i]<0))
+
+        number=c(tmp[1]-sum(tmp[-1]),tmp[-1])
+        tissue=rep(temptissue,length(tmp))
+        
+        df3=rbind(df3,cbind(tissue,number,direction))
+
+
+        tmp=c(nrow(p.mat[[1]]), sum(p.mat[[1]][,i]<0.05& fc.mat[[1]][,i]<0&p.mat[[2]][,i]<0.05& fc.mat[[2]][,i]>0), sum(p.mat[[1]][,i]<0.05& fc.mat[[1]][,i]>0&p.mat[[2]][,i]<0.05& fc.mat[[2]][,i]<0))
+
+        number=c(tmp[1]-sum(tmp[-1]),tmp[-1])
+        tissue=rep(temptissue,length(tmp))
+        
+        df4=rbind(df4,cbind(tissue,number,direction))
+            
+          
+      }
+
+    df1=as.data.frame(df1)
+    df1$number=as.numeric(as.character(df1$number))
+    df2=as.data.frame(df2)
+    df2$number=as.numeric(as.character(df2$number))
+    df3=as.data.frame(df3)
+    df3$number=as.numeric(as.character(df3$number))
+    df4=as.data.frame(df4)
+    df4$number=as.numeric(as.character(df4$number))
+
+    p2[[1]] <- ggplot(data=df1, aes(x=tissue, y=number, fill=direction))+geom_bar(stat="identity")+ggtitle(paste("Number of differential peaks in",STRAIN[1]))+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+scale_fill_manual(values = c("down"="dodgerblue"," up"="firebrick1","no change"="grey"),guide=guide_legend(title = NULL)) 
+    p2[[2]] <- ggplot(data=df2, aes(x=tissue, y=number, fill=direction))+geom_bar(stat="identity")+ggtitle(paste("Number of differential peaks in",STRAIN[2]))+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+scale_fill_manual(values = c("down"="dodgerblue"," up"="firebrick1","no change"="grey"),guide=guide_legend(title = NULL)) 
+        
+    p2[[3]] <- ggplot(data=df3, aes(x=tissue, y=number, fill=direction))+geom_bar(stat="identity")+ggtitle(paste("Number of commonly differential peaks between B6 and NZO" ))+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+scale_fill_manual(values = c("down"="dodgerblue"," up"="firebrick1","no change"="grey"),guide=guide_legend(title = NULL)) 
+    p2[[4]] <- ggplot(data=df4, aes(x=tissue, y=number, fill=direction))+geom_bar(stat="identity")+ggtitle(paste("Number of oppositely differential peaks between B6 and NZO" ))+ theme(axis.text.x = element_text(angle = 45, hjust = 1))+scale_fill_manual(values = c("down"="dodgerblue"," up"="firebrick1","no change"="grey"),guide=guide_legend(title = NULL)) 
+   
+    p <- multiplot(p2[[1]],p2[[3]],NA,NA,p2[[2]],p2[[4]],NA,NA,cols=2)
+    return(p)
+
+  }
+
+draw.barplot.mouse <- function(barplot)
   {
     STRAIN=c("B6","NZO")
     pathwaytype=c("cell type","immune module")
-    p=vector("list",2)
+    p=q=vector("list",2)
     for(i in 1:2)
       {
-        p[[i]]=vector("list",2)
+        p[[i]]=q[[i]]=vector("list",2)
         for(k in 1:2)
           {
-            df2=as.data.frame(barplot[[i]][barplot[[i]][,ncol(barplot[[i]])]==paste("within",STRAIN[k]),])
+            df2=as.data.frame(barplot[[i]][barplot[[i]][,ncol(barplot[[i]])]==paste("within",STRAIN[k]) & (  barplot[[i]][,ncol(barplot[[i]])-1]=="PBL"|  barplot[[i]][,ncol(barplot[[i]])-1]=="spleen")  ,])
             names(df2)=c("pathway","number","total","dir","tissue","strain")
-            df2$tissue=paste(df2$tissue," ",df2$dir," (",df2$total,")",sep="")
+            df2$strain=paste(df2$tissue," ",df2$dir," (",df2$total,")",sep="")
             df2$number=as.numeric(as.character(df2$number))
     
-            p[[i]][[k]] <- ggplot(data=df2, aes(x=tissue, y=number, fill=pathway))+geom_bar(stat="identity")+ggtitle(paste("Differential peaks in",STRAIN[k]))+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+ scale_fill_discrete(name=pathwaytype[i])
+            p[[i]][[k]] <- ggplot(data=df2, aes(x=strain, y=number, fill=pathway))+geom_bar(stat="identity")+ggtitle(paste("Differential peaks in",STRAIN[k]))+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+ scale_fill_discrete(name=pathwaytype[i])
+
+            q[[i]][[k]] <- ggplot(data=df2, aes(x="",y=number, fill=pathway))+geom_bar(width=1,stat="identity",position="fill")+facet_grid(tissue~dir)+ggtitle(paste("Differential peaks in",STRAIN[k]))+ scale_fill_discrete(name=pathwaytype[i])+ coord_polar(theta = "y")+labs(x=NULL,y=NULL) +theme_minimal(base_size = 10) +theme(strip.background = element_blank(),strip.text.y = element_text(angle=0,hjust=0),axis.text = element_blank(),panel.grid = element_blank())
+            
           }
       }
     multiplot(p[[1]][[1]],p[[1]][[2]],p[[2]][[1]],p[[2]][[2]],cols=2)
+    multiplot(q[[1]][[1]],q[[1]][[2]],q[[2]][[1]],q[[2]][[2]],cols=2)
+
    # return(p)
   }
 
@@ -429,7 +582,7 @@ draw.barplot <- function(barplot)
 draw.barplot.human <- function(barplot)
   {
     pathwaytype=c("cell type","immune module")
-    p=vector("list",2)
+    p=q=vector("list",2)
     for(i in 1:2)
       {
             df2=as.data.frame(barplot[[i]][(barplot[[i]][,ncol(barplot[[i]])]==paste("within B6") |barplot[[i]][,ncol(barplot[[i]])]==paste("within NZO") |  barplot[[i]][,ncol(barplot[[i]])]=="human"  |  barplot[[i]][,ncol(barplot[[i]])]== "common") &   barplot[[i]][,ncol(barplot[[i]])-1]=="PBL",])
@@ -438,9 +591,17 @@ draw.barplot.human <- function(barplot)
             df2$number=as.numeric(as.character(df2$number))
     
             p[[i]] <- ggplot(data=df2, aes(x=tissue, y=number, fill=pathway))+geom_bar(stat="identity")+ggtitle(paste("Differential peaks in PBMC/PBL"))+ theme(axis.text.x = element_text(angle = 90, hjust = 1))+ scale_fill_discrete(name=pathwaytype[i])
-          
+
+
+            q[[i]] <- ggplot(data=df2, aes(x="",y=number, fill=pathway))+geom_bar(width=1,stat="identity",position="fill")+facet_grid(strain~dir)+ggtitle(paste("Differential peaks in PBMC/PBL"))+ scale_fill_discrete(name=pathwaytype[i])+ coord_polar(theta = "y")+labs(x=NULL,y=NULL) +theme_minimal(base_size = 10) +
+    theme(strip.background = element_blank(),
+          strip.text.y = element_text(angle=0,hjust=0),
+          axis.text = element_blank(),
+          panel.grid = element_blank())
+    
       }
-    multiplot(p[[1]],NA,p[[2]],NA,cols=2)
+    multiplot(p[[1]],q[[1]],p[[2]],q[[2]],cols=2)
+
    # return(p)
   }
 
@@ -670,17 +831,29 @@ edgeRfitstrain <- function(y,age,gender,type)
    
     rownames(design) <- colnames(y)
     y <- estimateDisp(y, design, robust=TRUE)
+    
+    atac.glm <- glmFit(y, design)
 
-    test.method="glm" # ql | glm
+    
+    B6dir=atac.glm$coefficients[,"age"]
+    NZOdir=atac.glm$coefficients[,"age"]+ atac.glm$coefficients[,"typeNZO:age"]
 
-    if (test.method=="glm") {
-      atac.glm <- glmFit(y, design)
-      if(typeinteraction)  atac.glmfit <- glmLRT(atac.glm,coef="typeNZO:age") else atac.glmfit <- glmLRT(atac.glm,coef="typeNZO")
+    atac.glmfit <- glmLRT(atac.glm,coef="typeNZO:age") 
+#    if(typeinteraction)  atac.glmfit <- glmLRT(atac.glm,coef="typeNZO:age") else atac.glmfit <- glmLRT(atac.glm,coef="typeNZO")
       
-    }
-
     atac.glmtop <- topTags(atac.glmfit,n=nrow(bed),sort.by="none", adjust.method = "fdr")$table
-
+    if(typeinteraction)
+      {
+        tmpdir=rep(0,nrow(atac.glmtop))
+        tmpdir[atac.glmtop[,"logFC"]>0 & NZOdir>0]= 1
+        tmpdir[atac.glmtop[,"logFC"]<0 & NZOdir<0]= -1
+        atac.glmtop[,"logFC"]=tmpdir
+      }else{
+        tmpdir=rep(0,nrow(atac.glmtop))
+        tmpdir[atac.glmtop[,"logFC"]<0 & B6dir>0]= 1
+        tmpdir[atac.glmtop[,"logFC"]>0 & B6dir<0]= -1
+        atac.glmtop[,"logFC"]=tmpdir
+      }
     return(atac.glmtop)
   }
 

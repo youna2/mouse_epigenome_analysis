@@ -15,7 +15,7 @@ if(sum(strsplit(getwd(),"/")[[1]]=="ATACseq")==1 )
 {
 peakwidth= as.numeric(annotation[,"End"])-as.numeric(annotation[,"Start"])
 selectgene= rowSums(bed>1)>=2 & peakwidth > quantile(peakwidth,0.2) 
-}else selectgene= rowSums(bed>1)>=2
+}else selectgene= expressedgene#rowSums(bed>1)>=2
 
 bed=bed[selectgene,]
 Y=Y[selectgene,]
@@ -26,7 +26,7 @@ annotation.orig=annotation
 
 if(sum(strsplit(getwd(),"/")[[1]]=="RNAseq")==1 )
   {
-    colnames(annotation)="Entrez.ID"
+    colnames(annotation)=colnames(annotation.orig)="Entrez.ID"
     exp.gene=rownames(bed)
     save(exp.gene,file="../results/expressed_genelist.Rdata")
     filename="../results/RNAseqData2.Rdata"
@@ -53,4 +53,4 @@ STRAIN=STRAIN[selectsample]
 TYPE=TYPE[selectsample]
 SAMPLEMOUSEID=SAMPLEMOUSEID[selectsample]
 LIBRARYSIZE=LIBRARYSIZE[selectsample]
-save(LIBRARYSIZE,annotation.orig,annotation,AGE,GENDER,TISSUE,STRAIN,TYPE,SAMPLEMOUSEID,file=filename)
+save(bed,LIBRARYSIZE,annotation.orig,annotation,AGE,GENDER,TISSUE,STRAIN,TYPE,SAMPLEMOUSEID,file=filename)

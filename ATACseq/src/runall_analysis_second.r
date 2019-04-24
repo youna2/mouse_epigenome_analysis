@@ -1,8 +1,11 @@
 
-total.number.plot=bmpathimmune=spleenpathimmune=pblpathimmune=memorypathimmune= naivepathimmune=bmpathwiki=spleenpathwiki=pblpathwiki= memorypathwiki= naivepathwiki=bmpathkegg=spleenpathkegg=pblpathkegg= memorypathkegg= naivepathkegg=vector("list",10)
+total.number.plot=vector("list",10)
 
-balloonplot=barplot=vector("list",4)
-for(tid in 5:10)
+#bmpathimmune=spleenpathimmune=pblpathimmune=memorypathimmune= naivepathimmune=bmpathwiki=spleenpathwiki=pblpathwiki= memorypathwiki= naivepathwiki=bmpathkegg=spleenpathkegg=pblpathkegg= memorypathkegg= naivepathkegg=
+
+balloonplot=vector("list",25)
+barplot=vector("list",25)
+for(tid in 3:10)
   {
 
 if(tid==1) selB6=TRUE
@@ -69,4 +72,7 @@ multiplot2 <- function(a,b,c,d,e,f,g,h)
 ## dev.off()
 
 ### Here, only total.number.plot and balloonplot matter. Others are extra
-save(total.number.plot,bmpathimmune,spleenpathimmune,pblpathimmune,memorypathimmune, naivepathimmune,bmpathwiki,spleenpathwiki,pblpathwiki, memorypathwiki, naivepathwiki,bmpathkegg,spleenpathkegg,pblpathkegg, memorypathkegg, naivepathkegg,balloonplot,barplot,file=paste("balloonplot",BTID,".Rdata",sep=""))
+#save(total.number.plot,bmpathimmune,spleenpathimmune,pblpathimmune,memorypathimmune, naivepathimmune,bmpathwiki,spleenpathwiki,pblpathwiki, memorypathwiki, naivepathwiki,bmpathkegg,spleenpathkegg,pblpathkegg, memorypathkegg, naivepathkegg,balloonplot,barplot,file=paste("balloonplot",BTID,".Rdata",sep=""))
+
+
+save(total.number.plot,balloonplot,barplot,file=paste("balloonplot",BTID,".Rdata",sep=""))
